@@ -25,10 +25,6 @@ bin_PROGRAMS =
 else
 if DISABLE_LIBRARIES
 bin_PROGRAMS =
-else
-if SUPPORT_BOEHM
-bin_PROGRAMS = monograph
-endif
 endif
 endif
 

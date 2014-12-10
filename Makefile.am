@@ -2,26 +2,15 @@ ACLOCAL_AMFLAGS = -I m4
 
 AM_CFLAGS = $(WERROR_CFLAGS)
 
-MONOTOUCH_SUBDIRS = $(libgc_dir) eglib/src mono
-
 if CROSS_COMPILING
-SUBDIRS = po $(libgc_dir) eglib mono $(ikvm_native_dir) support data runtime scripts man samples msvc $(docs_dir)
+SUBDIRS = po $(libgc_dir) eglib mono $(ikvm_native_dir) support data scripts samples msvc $(docs_dir)
 # Keep in sync with SUBDIRS
 ## 'tools' is not normally built
-DIST_SUBDIRS = m4 po $(libgc_dir) eglib mono ikvm-native support data runtime scripts man samples tools msvc docs
+DIST_SUBDIRS = m4 po $(libgc_dir) eglib mono ikvm-native support data scripts samples tools msvc docs
 else
-if ONLY_MONOTOUCH
-SUBDIRS = $(MONOTOUCH_SUBDIRS) runtime
-else
-if ONLY_XAMMAC
-SUBDIRS = $(libgc_dir) eglib/src mono runtime
-else
-SUBDIRS = po $(libgc_dir) eglib mono $(ikvm_native_dir) support data runtime scripts man samples msvc $(docs_dir)
 # Keep in sync with SUBDIRS
 ## 'tools' is not normally built
-DIST_SUBDIRS = m4 po $(libgc_dir) eglib mono ikvm-native support data runtime scripts man samples tools msvc docs
-endif
-endif
+DIST_SUBDIRS = m4 po $(libgc_dir) eglib mono ikvm-native support data scripts samples tools msvc docs
 endif
 
 all: update_submodules
@@ -97,31 +86,6 @@ mcs-do-compiler-tests:
 .PHONY: bootstrap-world
 bootstrap-world: compiler-tests
 	$(MAKE) install
-
-if INSTALL_MONOTOUCH
-monotouch-do-build: config.h
-	@list='$(MONOTOUCH_SUBDIRS)'; for subdir in $$list; do \
-	  case "x$$subdir" in \
-		xmono ) target="monotouch-do-build";; \
-		* ) target="all";; \
-	  esac; \
-	  echo "Making $$target in $$subdir"; \
-	  (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) $$target); \
-        done;
-	(cd runtime && $(MAKE) $(AM_MAKEFLAGS) monotouch-do-build)
-
-monotouch-do-clean:
-	@list='$(MONOTOUCH_SUBDIRS)'; for subdir in $$list; do \
-	  case "x$$subdir" in \
-		xmono ) target="monotouch-do-clean";; \
-		* ) target="clean";; \
-	  esac; \
-	  echo "Making $$target in $$subdir"; \
-	  (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) $$target); \
-        done;
-	(cd runtime && $(MAKE) $(AM_MAKEFLAGS) monotouch-do-clean)
-
-endif
 
 win32getdeps:
 	wget http://www.go-mono.com/archive/pkgconfig-0.11-20020310.zip

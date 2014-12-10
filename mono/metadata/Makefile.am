@@ -28,12 +28,6 @@ unix_sources = \
 platform_sources = $(unix_sources)
 endif
 
-if SHARED_MONO
-if SUPPORT_BOEHM
-bin_PROGRAMS = pedump
-endif
-endif
-
 #
 # libtool is not capable of creating static/shared versions of the same
 # convenience lib, so we have to do it ourselves
@@ -49,21 +43,10 @@ endif
 sgen_libraries = $(shared_sgen_libraries) libmonoruntimesgen-static.la 
 endif
 
-if SUPPORT_BOEHM
 if DISABLE_EXECUTABLES
-shared_boehm_libraries = libmonoruntime.la
+noinst_LTLIBRARIES = $(shared_sgen_libraries)
 else
-if SHARED_MONO
-shared_boehm_libraries = libmonoruntime.la
-endif
-endif
-boehm_libraries = $(shared_boehm_libraries) libmonoruntime-static.la
-endif
-
-if DISABLE_EXECUTABLES
-noinst_LTLIBRARIES = $(shared_sgen_libraries) $(shared_boehm_libraries)
-else
-noinst_LTLIBRARIES = $(boehm_libraries) $(sgen_libraries)
+noinst_LTLIBRARIES = $(sgen_libraries)
 endif
 
 AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/mono $(LIBGC_CPPFLAGS) $(GLIB_CFLAGS) -DMONO_BINDIR=\"$(bindir)/\" -DMONO_ASSEMBLIES=\"$(assembliesdir)\" -DMONO_CFG_DIR=\"$(confdir)\"
@@ -80,8 +63,6 @@ AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/mono $(LIBGC_CPPFLAGS) $(GLIB_CFLA
 assembly.lo mono-config.lo: Makefile
 
 CLEANFILES = mono-bundle.stamp
-
-libmonoruntime_static_la_LIBADD = $(bundle_obj) $(libmonoruntime_la_LIBADD)
 
 null_sources = \
 	console-null.c
@@ -214,9 +195,6 @@ gc_dependent_sources = \
 	object.c	\
 	reflection.c
 
-boehm_sources = \
-	boehm-gc.c
-
 sgen_sources = \
 	sgen-os-posix.c		\
 	sgen-os-mach.c		\
@@ -274,15 +252,8 @@ sgen_sources = \
 	sgen-qsort.h	\
 	sgen-tagged-pointer.h
 
-libmonoruntime_la_SOURCES = $(common_sources) $(gc_dependent_sources) $(null_gc_sources) $(boehm_sources)
-libmonoruntime_la_CFLAGS = $(BOEHM_DEFINES)
-
 libmonoruntimesgen_la_SOURCES = $(common_sources) $(gc_dependent_sources) $(sgen_sources)
 libmonoruntimesgen_la_CFLAGS = $(SGEN_DEFINES)
-
-libmonoruntime_static_la_SOURCES = $(libmonoruntime_la_SOURCES)
-libmonoruntime_static_la_LDFLAGS = -static
-libmonoruntime_static_la_CFLAGS = $(BOEHM_DEFINES)
 
 libmonoruntimesgen_static_la_SOURCES = $(libmonoruntimesgen_la_SOURCES)
 libmonoruntimesgen_static_la_LDFLAGS = -static
@@ -326,20 +297,6 @@ pedump-dtrace.$(OBJEXT): $(top_srcdir)/data/mono.d libmonoruntime.la ../io-layer
 
 else
 PEDUMP_DTRACE_OBJECT = 
-endif
-
-if SHARED_MONO
-if SUPPORT_BOEHM
-pedump_SOURCES =		\
-	pedump.c
-
-pedump_LDADD = libmonoruntime.la ../io-layer/libwapi.la ../utils/libmonoutils.la \
-	$(LIBGC_LIBS) $(GLIB_LIBS) -lm $(LIBICONV) $(PEDUMP_DTRACE_OBJECT)
-
-if PLATFORM_DARWIN
-pedump_LDFLAGS=-framework CoreFoundation -framework Foundation
-endif
-endif
 endif
 
 EXTRA_DIST = make-bundle.pl sample-bundle $(win32_sources) $(unix_sources) $(null_sources) runtime.h \

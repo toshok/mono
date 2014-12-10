@@ -39,7 +39,7 @@ sgenstatic_libs = \
 
 CLASS=$(mcs_topdir)/class/lib/net_4_5
 
-RUNTIME_EXECUTABLE = $(if $(BOEHM),$(top_builddir)/mono/mini/mono-boehm,$(top_builddir)/runtime/mono-wrapper)
+RUNTIME_EXECUTABLE = $(top_builddir)/runtime/mono-wrapper
 
 RUNTIME = MONO_PATH=$(CLASS) $(RUNTIME_EXECUTABLE)
 RUNTIME_AOTCHECK = MONO_PATH=$(CLASS):. $(RUNTIME_EXECUTABLE)
@@ -89,19 +89,7 @@ sgen_libraries = libmonosgen-2.0.la
 sgen_static_libraries = libmini-static.la $(sgenstatic_libs)
 endif
 
-if SUPPORT_BOEHM
-boehm_libraries = libmonoboehm-2.0.la
-boehm_static_libraries = libmini-static.la $(static_libs)
-boehm_binaries  = mono-boehm
-endif
-
-#The mono uses sgen, while libmono remains boehm
-if SUPPORT_SGEN
 mono_bin_suffix = sgen
-else
-mono_bin_suffix = boehm
-endif
-libmono_suffix = boehm
 
 if DISABLE_EXECUTABLES
 else
@@ -119,9 +107,9 @@ endif
 if DISABLE_EXECUTABLES
 else
 if HOST_WIN32
-bin_PROGRAMS = $(boehm_binaries) $(sgen_binaries) monow
+bin_PROGRAMS = $(sgen_binaries) monow
 else
-bin_PROGRAMS = $(boehm_binaries) $(sgen_binaries)
+bin_PROGRAMS = $(sgen_binaries)
 endif
 endif
 
@@ -132,10 +120,10 @@ noinst_PROGRAMS = genmdesc mono
 endif
 
 if DISABLE_EXECUTABLES
-shared_libraries = $(boehm_libraries) $(sgen_libraries)
+shared_libraries = $(sgen_libraries)
 else
 if SHARED_MONO
-shared_libraries = $(boehm_libraries) $(sgen_libraries)
+shared_libraries = $(sgen_libraries)
 endif
 endif
 
@@ -153,23 +141,7 @@ else
 noinst_LTLIBRARIES = $(mini_common_lib) libmini-static.la
 endif
 
-if LOADED_LLVM
-lib_LTLIBRARIES += libmono-llvm.la
-libmono_llvm_la_SOURCES = mini-llvm.c mini-llvm-cpp.cpp
-libmono_llvm_la_LIBADD = $(LLVM_LIBS) $(LLVM_LDFLAGS)
-if PLATFORM_DARWIN
-libmono_llvm_la_LDFLAGS=-Wl,-undefined -Wl,suppress -Wl,-flat_namespace
-else
-libmono_llvm_la_LIBADD += $(top_builddir)/mono/mini/libmonoboehm-$(API_VER).la $(libs)
-endif
-endif
-
-mono_boehm_SOURCES = \
-	main.c
-
 mono_CFLAGS = $(AM_CFLAGS)
-
-mono_boehm_CFLAGS = $(AM_CFLAGS)
 
 AM_CPPFLAGS = $(LIBGC_CPPFLAGS)
 
@@ -183,16 +155,6 @@ mono_sgen_CFLAGS = $(AM_CFLAGS)
 
 # We build this after libmono was built so it contains the date when the final
 # link was done
-if SUPPORT_BOEHM
-if DISABLE_EXECUTABLES
-buildver-boehm.h: libmini-static.la $(monodir)/mono/metadata/libmonoruntime.la
-else
-buildver-boehm.h: libmini-static.la $(monodir)/mono/metadata/libmonoruntime-static.la
-endif
-	@echo "const char *build_date = \"`date`\";" > buildver-boehm.h
-mono_boehm-main.$(OBJEXT): buildver-boehm.h
-endif
-
 if DISABLE_EXECUTABLES
 buildver-sgen.h: libmini-static.la $(monodir)/mono/metadata/libmonoruntimesgen.la
 else
@@ -217,10 +179,8 @@ endif
 if STATIC_MONO
 # Link libmono into mono statically
 # This leads to higher performance, especially with TLS
-MONO_LIB=$(boehm_static_libraries)
 MONO_SGEN_LIB=$(sgen_static_libraries)
 else 
-MONO_LIB=libmonoboehm-2.0.la
 MONO_SGEN_LIB=libmonosgen-2.0.la
 endif
 
@@ -229,17 +189,6 @@ LLVMMONOF=
 else
 LLVMMONOF=$(LLVM_LIBS) $(LLVM_LDFLAGS)
 endif
-
-mono_boehm_LDADD = \
-	$(MONO_LIB)		\
-	$(GLIB_LIBS)		\
-	$(LLVMMONOF)		\
-	$(LIBICONV)		\
-	-lm			\
-	$(MONO_DTRACE_OBJECT)
-
-mono_boehm_LDFLAGS = \
-	$(static_flags) -export-dynamic $(monobinldflags) $(monobin_platform_ldflags)
 
 mono_sgen_LDADD = \
 	$(MONO_SGEN_LIB)	\
@@ -273,15 +222,9 @@ endif
 
 # Create monow.exe, linked for the 'windows' subsystem
 if HOST_WIN32
-if SUPPORT_BOEHM
-monow_LDADD = $(mono_boehm_LDADD)
-monow_LDFLAGS = $(mono_boehm_LDFLAGS) -mwindows
-monow_SOURCES = $(mono_boehm_SOURCES)
-else
 monow_LDADD = $(mono_sgen_LDADD)
 monow_LDFLAGS = $(mono_sgen_LDFLAGS) -mwindows
 monow_SOURCES = $(mono_sgen_SOURCES)
-endif
 endif
 
 genmdesc_SOURCES = \
@@ -549,11 +492,6 @@ endif
 libmini_la_SOURCES = $(common_sources) $(llvm_sources) $(arch_sources) $(os_sources)
 libmini_la_CFLAGS = $(mono_CFLAGS)
 
-libmonoboehm_2_0_la_SOURCES =
-libmonoboehm_2_0_la_CFLAGS = $(mono_boehm_CFLAGS)
-libmonoboehm_2_0_la_LIBADD = libmini.la $(libs) $(LIBMONO_DTRACE_OBJECT)
-libmonoboehm_2_0_la_LDFLAGS = $(libmonoldflags)
-
 libmonosgen_2_0_la_SOURCES =
 libmonosgen_2_0_la_CFLAGS = $(mono_sgen_CFLAGS)
 libmonosgen_2_0_la_LIBADD = libmini.la $(sgen_libs) $(LIBMONO_DTRACE_OBJECT)
@@ -723,7 +661,7 @@ docu: mini.sgm
 check-local: rcheck
 
 clean-local:
-	rm -f mono a.out gmon.out *.o buildver-boehm.h buildver-sgen.h test.exe
+	rm -f mono a.out gmon.out *.o buildver-sgen.h test.exe
 
 pkgconfigdir = $(libdir)/pkgconfig
 

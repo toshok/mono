@@ -39,12 +39,6 @@ bin_SCRIPTS = \
 	mono-heapviz		\
 	$(scripts_mono_configuration_crypto)
 
-if INSTALL_4_5
-bin_SCRIPTS += $(scripts_4_0)
-bin_SCRIPTS += dmcs
-bin_SCRIPTS += xbuild
-endif
-
 scripts_4_0_umask = \
 	makecert$(SCRIPT_SUFFIX)		\
 	sn$(SCRIPT_SUFFIX)
@@ -188,10 +182,6 @@ REWRITE2_DEBUG = $(REWRITE_DEBUG) -e 's,@''framework_version@,2.0,g'
 
 REWRITE2 = $(REWRITE) -e 's,@''framework_version@,2.0,g'
 REWRITE2_1 = $(REWRITE) -e 's,@''framework_version@,2.1,g'
-if INSTALL_4_5
-REWRITE4 = $(REWRITE) -e 's,@''framework_version@,4.5,g'
-REWRITE4_DEBUG = $(REWRITE_DEBUG) -e 's,@''framework_version@,4.5,g'
-endif
 
 peverify: peverify.in Makefile
 	$(REWRITE_COMMON) $(srcdir)/peverify.in > $@.tmp
