@@ -543,6 +543,3 @@ patch-automake:
 
 tags:
 	etags -o TAGS `find .. -name "*.h" -o -name "*.c"`
-
-Makefile.am: Makefile.am.in
-	cp $< $@
