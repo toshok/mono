@@ -61,7 +61,6 @@ extra_runtime_ldflags=""
 # Thread configuration inspired by sleepycat's db
 AC_MSG_CHECKING([host platform characteristics])
 has_dtrace=no
-parallel_mark=yes
 ikvm_native=yes
 
 case "$host" in
@@ -261,7 +260,6 @@ case "$host" in
 		enable_solaris_tar_check=yes
 		;;
 	*-*-darwin*)
-		parallel_mark="Disabled_Currently_Hangs_On_MacOSX"
 		host_win32=no
 		platform_darwin=yes
 		target_mach=yes
@@ -636,7 +634,6 @@ fi
 
 AM_CONDITIONAL(STATIC_MONO, test x$with_static_mono != xno)
 AM_CONDITIONAL(SHARED_MONO, test x$with_shared_mono != xno)
-AC_ARG_ENABLE(mcs-build, [  --disable-mcs-build disable the build of the mcs directory], try_mcs_build=$enableval, enable_mcs_build=yes)
 
 AC_ARG_WITH(xen_opt,   [  --with-xen_opt=yes,no          Enable Xen-specific behaviour (defaults to yes)],[],[with_xen_opt=yes])
 if test "x$with_xen_opt" = "xyes" -a "x$mono_cv_clang" = "xno"; then
@@ -2478,7 +2475,6 @@ HOST=$TARGET
 
 if test "x$host" != "x$target"; then
    AC_DEFINE(MONO_CROSS_COMPILE,1,[The runtime is compiled for cross-compiling mode])
-   enable_mcs_build=no
    case "$target" in
    arm*-darwin*)
 		TARGET=ARM;
@@ -2933,11 +2929,6 @@ if test ${ACCESS_UNALIGNED} = no; then
 	CPPFLAGS="$CPPFLAGS -DNO_UNALIGNED_ACCESS"
 fi
 
-AC_ARG_WITH(profile4_5,[  --with-profile4_5=yes,no        If you want to install the 4.5 FX (defaults to yes)],                [], [with_profile4_5=yes])
-AC_ARG_WITH(monodroid, [  --with-monodroid=yes,no         If you want to build the MonoDroid assemblies (defaults to no)],     [], [with_monodroid=no])
-AC_ARG_WITH(monotouch, [  --with-monotouch=yes,no,only    If you want to build the MonoTouch assemblies (defaults to no)],     [], [with_monotouch=no])
-AC_ARG_WITH(xammac,    [  --with-xammac=yes,no,only       If you want to build the Xamarin.Mac assemblies (defaults to no)],   [], [with_xammac=no])
-
 OPROFILE=no
 AC_ARG_WITH(oprofile,[  --with-oprofile=no,<oprofile install dir>   Enable oprofile support (defaults to no)],[
 	if test x$with_oprofile != xno; then
@@ -2960,16 +2951,6 @@ AC_ARG_WITH(malloc_mempools,[  --with-malloc-mempools=yes,no  Use malloc for eac
 	fi
 ])
 
-
-DISABLE_MCS_DOCS=no
-AC_ARG_WITH(mcs_docs,[  --with-mcs-docs=yes,no         If you want to build the documentation under mcs (defaults to yes)],[
-	if test x$with_mcs_docs != xyes; then
-		DISABLE_MCS_DOCS=yes
-	fi
-])
-if test x$with_profile4_5 != xyes; then
-	DISABLE_MCS_DOCS=yes
-fi
 
 AC_ARG_WITH(lazy_gc_thread_creation, [  --with-lazy-gc-thread-creation=yes|no      Enable lazy runtime thread creation, embedding host must do it explicitly (defaults to no)],[
 	if test x$with_lazy_gc_thread_creation != xno ; then
@@ -2998,22 +2979,7 @@ else
 fi
 AC_SUBST(LIBMONO_LA)
 
-dnl
-dnl Consistency settings
-dnl
-if test x$cross_compiling = xyes -o x$enable_mcs_build = xno; then
-   DISABLE_MCS_DOCS=yes
-   with_profile4_5=no
-   with_monodroid=no
-   with_monotouch=no
-   with_xammac=no
-fi
-
-if test x$DISABLE_MCS_DOCS = xyes; then
-   docs_dir=""
-else
-   docs_dir=docs
-fi
+docs_dir=""
 AC_SUBST(docs_dir)
 
 AM_CONDITIONAL(HAVE_OPROFILE, test x$OPROFILE = xyes)
@@ -3290,7 +3256,7 @@ po/Makefile
 ])
 
 # Update all submodules recursively to ensure everything is checked out
-$srcdir/scripts/update_submodules
+#$srcdir/scripts/update_submodules
 
 if test x$host_win32 = xyes; then
    # Get rid of 'cyg' prefixes in library names
@@ -3305,93 +3271,6 @@ if test x$platform_darwin = xyes; then
    # This doesn't seem to be required and it slows down parallel builds
    sed -e 's,lock_old_archive_extraction=yes,lock_old_archive_extraction=no,g' < libtool > libtool.new && mv libtool.new libtool && chmod +x libtool
 fi
-
-(
-  case $prefix in
-  NONE) prefix=$ac_default_prefix ;;
-  esac
-  case $exec_prefix in
-  NONE) exec_prefix='${prefix}' ;;
-  esac
-
-  #
-  # If we are cross compiling, we don't build in the mcs/ tree.  Let us not clobber
-  # any existing config.make.  This allows people to share the same source tree
-  # with different build directories, one native and one cross
-  #
-  if test x$cross_compiling = xno && test x$enable_mcs_build != xno; then
-
-    test -w $mcs_topdir/build || chmod +w $mcs_topdir/build
-
-    echo "prefix=$prefix" > $mcs_topdir/build/config.make
-    echo "exec_prefix=$exec_prefix" >> $mcs_topdir/build/config.make
-    echo "sysconfdir=$sysconfdir" >> $mcs_topdir/build/config.make
-    echo 'mono_libdir=${exec_prefix}/lib' >> $mcs_topdir/build/config.make
-    echo 'IL_FLAGS = /debug' >> $mcs_topdir/build/config.make
-    echo "RUNTIME = $mono_build_root/runtime/mono-wrapper" >> $mcs_topdir/build/config.make
-    echo "ILDISASM = $mono_build_root/runtime/monodis-wrapper" >> $mcs_topdir/build/config.make
-    echo "JAY_CFLAGS = $JAY_CFLAGS" >> $mcs_topdir/build/config.make
-
-    case $INSTALL in
-    [[\\/$]]* | ?:[[\\/]]* ) mcs_INSTALL=$INSTALL ;;
-    *) mcs_INSTALL=$mono_build_root/$INSTALL ;;
-    esac
-
-    echo "INSTALL = $mcs_INSTALL" >> $mcs_topdir/build/config.make
-
-    export VERSION
-    [myver=$($AWK 'BEGIN {
-      split (ENVIRON["VERSION"] ".0.0.0", vsplit, ".")
-      if(length(vsplit [1]) > 4) {
-        split (substr(ENVIRON["VERSION"], 0, 4) "." substr(ENVIRON["VERSION"], 5) ".0.0", vsplit, ".")
-      }
-      print vsplit [1] "." vsplit [2] "." vsplit [3] "." vsplit [4]
-    }')]
-
-    echo "MONO_VERSION = $myver" >> $mcs_topdir/build/config.make
-
-    if test x$platform_darwin = xyes; then
-      echo "PLATFORM = darwin" >> $mcs_topdir/build/config.make
-    fi
-
-	if test x$AOT_SUPPORTED = xyes -a x$enable_system_aot = xdefault; then
-	   enable_system_aot=yes
-	fi
-
-    if test x$host_win32 = xno -a x$enable_system_aot = xyes; then
-      echo "ENABLE_AOT = 1" >> $mcs_topdir/build/config.make
-    fi
-
-    if test x$DISABLE_MCS_DOCS = xyes; then
-      echo "DISABLE_MCS_DOCS = yes" >> $mcs_topdir/build/config.make
-    fi
-
-    if test x$has_extension_module != xno; then
-        echo "EXTENSION_MODULE = 1" >> $srcdir/$mcsdir/build/config.make
-    fi
-
-	default_profile=net_4_5
-    if test -z "$INSTALL_MONODROID_TRUE"; then :
-  		default_profile=monodroid
-    fi
-    if test -z "$INSTALL_MONOTOUCH_TRUE"; then :
-  		default_profile=monotouch
-    fi
-	if test -z "$INSTALL_XAMMAC_TRUE"; then :
-  		default_profile=xammac
-	fi
-    if test -z "$INSTALL_4_5_TRUE"; then :
-  		default_profile=net_4_5
-    fi
-    
-    echo "DEFAULT_PROFILE = $default_profile" >> $srcdir/$mcsdir/build/config.make
-    
-    if test "x$test_bcl_opt" = "xyes"; then    
-      echo "BCL_OPTIMIZE = 1" >> $srcdir/$mcsdir/build/config.make
-    fi
-
-  fi
-)
 
 echo "
    Configuration:
