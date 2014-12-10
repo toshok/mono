@@ -32,22 +32,9 @@ endif
 # libtool is not capable of creating static/shared versions of the same
 # convenience lib, so we have to do it ourselves
 #
-if SUPPORT_SGEN
-if DISABLE_EXECUTABLES
-shared_sgen_libraries = libmonoruntimesgen.la 
-else
-if SHARED_MONO
-shared_sgen_libraries = libmonoruntimesgen.la 
-endif
-endif
-sgen_libraries = $(shared_sgen_libraries) libmonoruntimesgen-static.la 
-endif
+sgen_libraries = libsgen.la libsgen-static.la 
 
-if DISABLE_EXECUTABLES
 noinst_LTLIBRARIES = $(shared_sgen_libraries)
-else
-noinst_LTLIBRARIES = $(sgen_libraries)
-endif
 
 AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/mono $(LIBGC_CPPFLAGS) $(GLIB_CFLAGS) -DMONO_BINDIR=\"$(bindir)/\" -DMONO_ASSEMBLIES=\"$(assembliesdir)\" -DMONO_CFG_DIR=\"$(confdir)\"
 
@@ -252,52 +239,21 @@ sgen_sources = \
 	sgen-qsort.h	\
 	sgen-tagged-pointer.h
 
-libmonoruntimesgen_la_SOURCES = $(common_sources) $(gc_dependent_sources) $(sgen_sources)
-libmonoruntimesgen_la_CFLAGS = $(SGEN_DEFINES)
+libsgen_la_SOURCES = $(sgen_sources) $(common_sources) $(gc_dependent_sources) 
+libsgen_la_CFLAGS = $(SGEN_DEFINES)
 
-libmonoruntimesgen_static_la_SOURCES = $(libmonoruntimesgen_la_SOURCES)
-libmonoruntimesgen_static_la_LDFLAGS = -static
-libmonoruntimesgen_static_la_CFLAGS = $(SGEN_DEFINES)
+libsgen_static_la_SOURCES = $(libsgen_la_SOURCES)
+libsgen_static_la_LDFLAGS = -static
+libsgen_static_la_CFLAGS = $(SGEN_DEFINES)
 
-libmonoruntimeincludedir = $(includedir)/mono-$(API_VER)/mono/metadata
+libsgenincludedir = $(includedir)/sgen-$(API_VER)/
 
-libmonoruntimeinclude_HEADERS = \
-	assembly.h		\
-	attrdefs.h		\
-	appdomain.h		\
-	blob.h			\
-	class.h			\
-	debug-helpers.h		\
-	debug-mono-symfile.h	\
-	threads.h		\
-	environment.h		\
-	exception.h		\
-	image.h			\
-	loader.h		\
-	metadata.h		\
-	mono-config.h		\
-	mono-debug.h		\
-	mono-gc.h		\
-	sgen-bridge.h		\
-	object.h		\
-	opcodes.h		\
-	profiler.h		\
-	reflection.h		\
-	row-indexes.h		\
-	tokentype.h		\
-	verify.h		
+libsgeninclude_HEADERS =
 
-if DTRACE_G_REQUIRED
+noinst_PROGRAMS = test-sgen
+test_sgen_SOURCES = test-sgen.c
 
-PEDUMP_DTRACE_OBJECT = pedump-dtrace.$(OBJEXT)
-
-pedump-dtrace.$(OBJEXT): $(top_srcdir)/data/mono.d libmonoruntime.la ../io-layer/libwapi.la ../utils/libmonoutils.la
-	DTRACE="$(DTRACE)" DTRACEFLAGS="$(DTRACEFLAGS)" AR="$(AR)" $(SHELL) $(top_srcdir)/data/dtrace-prelink.sh \
-	--pic pedump-dtrace.$(OBJEXT) $(top_srcdir)/data/mono.d libmonoruntime.la ../io-layer/libwapi.la ../utils/libmonoutils.la
-
-else
-PEDUMP_DTRACE_OBJECT = 
-endif
+test_sgen_CFLAGS = $(AM_CFLAGS)
 
 EXTRA_DIST = make-bundle.pl sample-bundle $(win32_sources) $(unix_sources) $(null_sources) runtime.h \
 		tpool-poll.c tpool-epoll.c tpool-kqueue.c

@@ -627,29 +627,8 @@ case $host in
 *nacl* ) with_shared_mono=yes;;
 esac
 
-if test "x$host_win32" = "xyes"; then
-   # Boehm GC requires the runtime to be in its own dll
-   with_static_mono=no
-fi
-
 AM_CONDITIONAL(STATIC_MONO, test x$with_static_mono != xno)
 AM_CONDITIONAL(SHARED_MONO, test x$with_shared_mono != xno)
-
-AC_ARG_WITH(xen_opt,   [  --with-xen_opt=yes,no          Enable Xen-specific behaviour (defaults to yes)],[],[with_xen_opt=yes])
-if test "x$with_xen_opt" = "xyes" -a "x$mono_cv_clang" = "xno"; then
-	AC_DEFINE(MONO_XEN_OPT, 1, [Xen-specific behaviour])
-	ORIG_CFLAGS=$CFLAGS
-	CFLAGS="$CFLAGS -mno-tls-direct-seg-refs"
-	AC_MSG_CHECKING(for -mno-tls-direct-seg-refs option to gcc)
-	AC_TRY_COMPILE([], [
-		return 0;
-	], [
-	   AC_MSG_RESULT(yes)
-	], [
-	   AC_MSG_RESULT(no)
-	   CFLAGS=$ORIG_CFLAGS
-	])
-fi
 
 AC_ARG_ENABLE(small-config, [  --enable-small-config Enable tweaks to reduce requirements (and capabilities)], enable_small_config=$enableval, enable_small_config=no)
 
@@ -658,14 +637,12 @@ if test x$enable_small_config = xyes; then
 	CFLAGS_FOR_LIBGC="$CFLAGS_FOR_LIBGC -DSMALL_CONFIG"
 fi
 
-AC_ARG_ENABLE(system-aot, [  --enable-system-aot  Enable the Ahead-Of-Time compilation of system assemblies during the build (on by default on some platforms)], enable_system_aot=$enableval, enable_system_aot=default)
-
 DISABLED_FEATURES=none
 
 AC_ARG_ENABLE(minimal, [  --enable-minimal=LIST      drop support for LIST subsystems.
-     LIST is a comma-separated list from: aot, profiler, decimal, pinvoke, debug, appdomains, verifier, 
-     reflection_emit, reflection_emit_save, large_code, logging, com, ssa, generics, attach, jit, simd, soft_debug, perfcounters, normalization, assembly_remapping, shared_perfcounters, remoting,
-	 security, sgen_remset, sgen_marksweep_par, sgen_marksweep_fixed, sgen_marksweep_fixed_par, sgen_copying, shared_handles.],
+     LIST is a comma-separated list from: profiler, debug, 
+     large_code, logging, perfcounters, shared_perfcounters,
+     sgen_remset, sgen_marksweep_par, sgen_marksweep_fixed, sgen_marksweep_fixed_par, sgen_copying.],
 [
 	for feature in `echo "$enable_minimal" | sed -e "s/,/ /g"`; do
 		eval "mono_feature_disable_$feature='yes'"
@@ -676,41 +653,15 @@ AC_ARG_ENABLE(minimal, [  --enable-minimal=LIST      drop support for LIST subsy
 
 AC_DEFINE_UNQUOTED(DISABLED_FEATURES, "$DISABLED_FEATURES", [String of disabled features])
 
-if test "x$mono_feature_disable_aot" = "xyes"; then
-	AC_DEFINE(DISABLE_AOT_COMPILER, 1, [Disable AOT Compiler])
-	AC_MSG_NOTICE([Disabled AOT compiler])
-fi
-
 if test "x$mono_feature_disable_profiler" = "xyes"; then
 	AC_DEFINE(DISABLE_PROFILER, 1, [Disable default profiler support])
 	AC_MSG_NOTICE([Disabled support for the profiler])
 fi
 AM_CONDITIONAL(DISABLE_PROFILER, test x$mono_feature_disable_profiler = xyes)
 
-if test "x$mono_feature_disable_decimal" = "xyes"; then
-	AC_DEFINE(DISABLE_DECIMAL, 1, [Disable System.Decimal support])
-	AC_MSG_NOTICE([Disabled support for decimal])
-fi
-
-if test "x$mono_feature_disable_pinvoke" = "xyes"; then
-	AC_DEFINE(DISABLE_PINVOKE, 1, [Disable P/Invoke support])
-	AC_MSG_NOTICE([Disabled support for P/Invoke])
-fi
-
 if test "x$mono_feature_disable_debug" = "xyes"; then
 	AC_DEFINE(DISABLE_DEBUG, 1, [Disable runtime debugging support])
 	AC_MSG_NOTICE([Disabled support for runtime debugging])
-fi
-
-if test "x$mono_feature_disable_reflection_emit" = "xyes"; then
-	AC_DEFINE(DISABLE_REFLECTION_EMIT, 1, [Disable reflection emit support])
-	mono_feature_disable_reflection_emit_save=yes
-	AC_MSG_NOTICE([Disabled support for Reflection.Emit])
-fi
-
-if test "x$mono_feature_disable_reflection_emit_save" = "xyes"; then
-	AC_DEFINE(DISABLE_REFLECTION_EMIT_SAVE, 1, [Disable assembly saving support in reflection emit])
-	AC_MSG_NOTICE([Disabled support for Reflection.Emit.Save])
 fi
 
 if test "x$mono_feature_disable_large_code" = "xyes"; then
@@ -723,44 +674,9 @@ if test "x$mono_feature_disable_logging" = "xyes"; then
 	AC_MSG_NOTICE([Disabled support for logging])
 fi
 
-if test "x$mono_feature_disable_com" = "xyes"; then
-	AC_DEFINE(DISABLE_COM, 1, [Disable COM support])
-	AC_MSG_NOTICE([Disabled COM support])
-fi
-
-if test "x$mono_feature_disable_ssa" = "xyes"; then
-	AC_DEFINE(DISABLE_SSA, 1, [Disable advanced SSA JIT optimizations])
-	AC_MSG_NOTICE([Disabled SSA JIT optimizations])
-fi
-
-if test "x$mono_feature_disable_generics" = "xyes"; then
-	AC_DEFINE(DISABLE_GENERICS, 1, [Disable generics support])
-	AC_MSG_NOTICE([Disabled Generics Support])
-fi
-
-if test "x$mono_feature_disable_shadowcopy" = "xyes"; then
-   	AC_DEFINE(DISABLE_SHADOW_COPY, 1, [Disable Shadow Copy for AppDomains])
-	AC_MSG_NOTICE([Disabled Shadow copy for AppDomains])
-fi
-
 if test "x$mono_feature_disable_portability" = "xyes"; then
    	AC_DEFINE(DISABLE_PORTABILITY, 1, [Disables the IO portability layer])
 	AC_MSG_NOTICE([Disabled IO Portability layer])
-fi
-
-if test "x$mono_feature_disable_attach" = "xyes"; then
-	AC_DEFINE(DISABLE_ATTACH, 1, [Disable agent attach support])
-	AC_MSG_NOTICE([Disabled agent attach])
-fi
-
-if test "x$mono_feature_disable_full_messages" = "xyes"; then
-	AC_DEFINE(DISABLE_FULL_MESSAGES, 1, [Disables building in the full table of WAPI messages])
-	AC_MSG_NOTICE([Disabled full messages for Win32 errors, only core message strings shipped])
-fi
-
-if test "x$mono_feature_disable_verifier" = "xyes"; then
-	AC_DEFINE(DISABLE_VERIFIER, 1, [Disables the verifier])
-	AC_MSG_NOTICE([Disabled the metadata and IL verifiers])
 fi
 
 if test "x$mono_feature_disable_jit" = "xyes"; then
@@ -770,48 +686,14 @@ fi
 
 AM_CONDITIONAL(DISABLE_JIT, test x$mono_feature_disable_jit = xyes)
 
-if test "x$mono_feature_disable_simd" = "xyes"; then
-	AC_DEFINE(DISABLE_SIMD, 1, [Disable SIMD intrinsics related optimizations.])
-	AC_MSG_NOTICE([Disabled SIMD support])
-fi
-
-if test "x$mono_feature_disable_soft_debug" = "xyes"; then
-	AC_DEFINE(DISABLE_SOFT_DEBUG, 1, [Disable Soft Debugger Agent.])
-	AC_MSG_NOTICE([Disabled Soft Debugger.])
-fi
-
 if test "x$mono_feature_disable_perfcounters" = "xyes"; then
 	AC_DEFINE(DISABLE_PERFCOUNTERS, 1, [Disable Performance Counters.])
 	AC_MSG_NOTICE([Disabled Performance Counters.])
-fi
-if test "x$mono_feature_disable_normalization" = "xyes"; then
-	AC_DEFINE(DISABLE_NORMALIZATION, 1, [Disable String normalization support.])
-	AC_MSG_NOTICE([Disabled String normalization support.])
-fi
-
-if test "x$mono_feature_disable_assembly_remapping" = "xyes"; then
-	AC_DEFINE(DISABLE_ASSEMBLY_REMAPPING, 1, [Disable assembly remapping.])
-	AC_MSG_NOTICE([Disabled Assembly remapping.])
 fi
 
 if test "x$mono_feature_disable_shared_perfcounters" = "xyes"; then
 	AC_DEFINE(DISABLE_SHARED_PERFCOUNTERS, 1, [Disable shared perfcounters.])
 	AC_MSG_NOTICE([Disabled Shared perfcounters.])
-fi
-
-if test "x$mono_feature_disable_appdomains" = "xyes"; then
-	AC_DEFINE(DISABLE_APPDOMAINS, 1, [Disable support for multiple appdomains.])
-	AC_MSG_NOTICE([Disabled support for multiple appdomains.])
-fi
-
-if test "x$mono_feature_disable_remoting" = "xyes"; then
-	AC_DEFINE(DISABLE_REMOTING, 1, [Disable remoting support (This disables type proxies and make com non-functional)])
-	AC_MSG_NOTICE([Disabled remoting])
-fi
-
-if test "x$mono_feature_disable_security" = "xyes"; then
-	AC_DEFINE(DISABLE_SECURITY, 1, [Disable CAS/CoreCLR security])
-	AC_MSG_NOTICE([Disabled CAS/CoreCLR security manager (used e.g. for Moonlight)])
 fi
 
 if test "x$mono_feature_disable_sgen_remset" = "xyes"; then
@@ -837,44 +719,6 @@ fi
 if test "x$mono_feature_disable_sgen_copying" = "xyes"; then
 	AC_DEFINE(DISABLE_SGEN_MAJOR_COPYING, 1, [Disable major=copying support in SGEN.])
 	AC_MSG_NOTICE([Disabled major=copying support in SGEN.])
-fi
-
-if test "x$mono_feature_disable_shared_handles" = "xyes"; then
-	AC_DEFINE(DISABLE_SHARED_HANDLES, 1, [Disable inter-process shared handles])
-	AC_SUBST(DISABLE_SHARED_HANDLES)
-fi
-
-AC_ARG_ENABLE(executables, [  --disable-executables disable the build of the runtime executables], enable_executables=$enableval, enable_executables=yes)
-AM_CONDITIONAL(DISABLE_EXECUTABLES, test x$enable_executables = xno)
-
-has_extension_module=no
-AC_ARG_ENABLE(extension-module, [  --enable-extension-module=LIST enable the core-extensions from LIST],
-[
-	for extension in `echo "$enable_extension_module" | sed -e "s/,/ /g"`; do
-		if test x$extension = xdefault ; then
-			has_extension_module=yes;
-		fi
-	done
-	if test x$enable_extension_module = xyes; then
-		has_extension_module=yes;
-	fi
-], [])
-
-AM_CONDITIONAL([HAS_EXTENSION_MODULE], [test x$has_extension_module != xno])
-
-if test x$has_extension_module != xno ; then
-	AC_DEFINE([ENABLE_EXTENSION_MODULE], 1, [Extension module enabled])
-	AC_MSG_NOTICE([Enabling mono extension module.])
-fi
-
-AC_ARG_ENABLE(gsharing, [  --enable-gsharing Enable gsharing], enable_gsharing=$enableval, enable_gsharing=no)
-if test x$enable_gsharing = xyes; then
-	AC_DEFINE(ENABLE_GSHAREDVT,1,[Gsharing])
-fi
-
-AC_ARG_ENABLE(native-types, [  --enable-native-types Enable native types], enable_native_types=$enableval, enable_native_types=no)
-if test x$enable_native_types = xyes; then
-	AC_DEFINE(MONO_NATIVE_TYPES,1,[native types])
 fi
 
 AC_MSG_CHECKING(for visibility __attribute__)
@@ -2183,91 +2027,6 @@ if test "x$enable_nacl_gc" = "xyes"; then
 fi
 AC_SUBST(MONO_NACL_ALIGN_MASK_OFF)
 
-dnl **************
-dnl ***  LLVM  ***
-dnl **************
-
-AC_ARG_ENABLE(llvm,[  --enable-llvm	Enable the LLVM back-end], enable_llvm=$enableval, enable_llvm=no)
-AC_ARG_ENABLE(loadedllvm,[  --enable-loadedllvm	Load the LLVM back-end dynamically], enable_llvm=$enableval && enable_loadedllvm=$enableval, enable_loadedllvm=no)
-AC_ARG_ENABLE(llvm-version-check,[  --enable-llvm-version-check Check that the LLVM matches the version expected by mono], enable_llvm_version_check=$enableval, enable_llvm_version_check=no)
-
-AC_ARG_WITH(llvm, [  --with-llvm=<llvm prefix>    Enable the LLVM back-end], enable_llvm=yes,)
-
-if test "x$enable_llvm" = "xyes"; then
-   if test "x$with_llvm" != "x"; then
-   	  LLVM_CONFIG=$with_llvm/bin/llvm-config
-	  if test ! -x $LLVM_CONFIG; then
-	  	 AC_MSG_ERROR([LLVM executable $LLVM_CONFIG not found.])
-      fi
-   else
-      AC_PATH_PROG(LLVM_CONFIG, llvm-config, no)
-      if test "x$LLVM_CONFIG" = "xno"; then
-   	     AC_MSG_ERROR([llvm-config not found.])
-      fi
-   fi
-
-   llvm_codegen="x86codegen"
-   case "$target" in
-   arm*)
-		llvm_codegen="armcodegen"
-		;;
-   esac
-
-   # The output of --cflags seems to include optimizations flags too
-   LLVM_CFLAGS=`$LLVM_CONFIG --cflags | sed -e 's/-O2//g' | sed -e 's/-O0//g' | sed -e 's/-fomit-frame-pointer//g' | sed -e 's/-fPIC//g'`
-   # LLVM is compiled with -fno-rtti, so we need this too, since our classes inherit
-   # from LLVM classes.
-   LLVM_CXXFLAGS="`$LLVM_CONFIG --cxxflags` -fno-rtti"
-   LLVM_LDFLAGS=`$LLVM_CONFIG --ldflags`
-   # This might include empty lines
-   LLVM_SYSTEM_LIBS=`$LLVM_CONFIG --system-libs 2>/dev/null | grep -- -`
-   if test "x$host" != "x$target"; then
-      # No need for jit libs
-      LLVM_LIBS=`$LLVM_CONFIG --libs core bitwriter`
-   else
-      LLVM_LIBS=`$LLVM_CONFIG --libs core bitwriter jit mcjit $llvm_codegen`
-   fi
-   LLVM_LIBS="$LLVM_LIBS $LLVM_LDFLAGS $LLVM_SYSTEM_LIBS -lstdc++"
-
-   expected_llvm_version="3.4svn-mono-mono/e656cac"
-
-   # Should be something like '2.6' or '2.7svn'
-   llvm_version=`$LLVM_CONFIG --version`
-   llvm_api_version=`$LLVM_CONFIG --mono-api-version 2>/dev/null`
-   AC_MSG_CHECKING(LLVM version)
-   AC_MSG_RESULT($llvm_version)
-   if echo $llvm_version | grep -q 'mono'; then
-	  if test "x$enable_llvm_version_check" == "xyes"; then
-	  	 if test "$llvm_version" != "$expected_llvm_version"; then
-	  	 	AC_MSG_ERROR([Expected llvm version $expected_llvm_version, but llvm-config --version returned $llvm_version"])
-	  	 fi
-	  fi
-	  if test "x$llvm_api_version" = "x"; then
-		LLVM_CFLAGS="$LLVM_CFLAGS -DLLVM_API_VERSION=0"
-		LLVM_CXXFLAGS="$LLVM_CXXFLAGS -DLLVM_API_VERSION=0"
-	  else
-		LLVM_CFLAGS="$LLVM_CFLAGS -DLLVM_API_VERSION=$llvm_api_version"
-		LLVM_CXXFLAGS="$LLVM_CXXFLAGS -DLLVM_API_VERSION=$llvm_api_version"
-	  fi
-   else
-	  AC_MSG_ERROR([Compiling with stock LLVM is not supported, please use the Mono LLVM repo at https://github.com/mono/llvm, with the GIT branch which matches this version of mono, i.e. 'mono-2-10' for Mono 2.10.])
-   fi
-
-   AC_DEFINE_UNQUOTED(LLVM_VERSION, "$llvm_version", [Full version of LLVM libraties])
-
-   AC_SUBST(LLVM_CFLAGS)
-   AC_SUBST(LLVM_CXXFLAGS)
-   AC_SUBST(LLVM_LIBS)
-   AC_SUBST(LLVM_LDFLAGS)
-   AC_DEFINE(ENABLE_LLVM, 1, [Enable the LLVM back end])
-fi
-
-AM_CONDITIONAL(ENABLE_LLVM, [test x$enable_llvm = xyes])
-if test "x$enable_loadedllvm" = "xyes"; then
-   AC_DEFINE(MONO_LLVM_LOADED, 1, [The LLVM back end is dynamically loaded])
-fi
-AM_CONDITIONAL(LOADED_LLVM, [test x$enable_loadedllvm = xyes])
-
 TARGET="unknown"
 ACCESS_UNALIGNED="yes"
 
@@ -3043,159 +2802,6 @@ AC_SUBST(mono_cfg_dir)
 
 AC_CONFIG_FILES([po/mcs/Makefile.in])
 
-AC_CONFIG_COMMANDS([runtime/etc/mono/1.0/machine.config],
-[   depth=../../../..
-    case $srcdir in
-    [[\\/$]]* | ?:[[\\/]]* ) reldir=$srcdir ;;
-    .) reldir=$depth ;;
-    *) reldir=$depth/$srcdir ;;
-    esac
-    $ac_aux_dir/install-sh -d runtime/etc/mono/1.0
-    cd runtime/etc/mono/1.0
-    rm -f machine.config
-    $LN_S $reldir/data/net_1_1/machine.config machine.config
-    cd $depth
-],[LN_S='$LN_S'])
-
-AC_CONFIG_COMMANDS([runtime/etc/mono/2.0/machine.config],
-[   depth=../../../..
-    case $srcdir in
-    [[\\/$]]* | ?:[[\\/]]* ) reldir=$srcdir ;;
-    .) reldir=$depth ;;
-    *) reldir=$depth/$srcdir ;;
-    esac
-    $ac_aux_dir/install-sh -d runtime/etc/mono/2.0
-    cd runtime/etc/mono/2.0
-    rm -f machine.config
-    $LN_S $reldir/data/net_2_0/machine.config machine.config
-    cd $depth
-],[LN_S='$LN_S'])
-
-AC_CONFIG_COMMANDS([runtime/etc/mono/2.0/web.config],
-[   depth=../../../..
-    case $srcdir in
-    [[\\/$]]* | ?:[[\\/]]* ) reldir=$srcdir ;;
-    .) reldir=$depth ;;
-    *) reldir=$depth/$srcdir ;;
-    esac
-    $ac_aux_dir/install-sh -d runtime/etc/mono/2.0
-    cd runtime/etc/mono/2.0
-    rm -f web.config
-    $LN_S $reldir/data/net_2_0/web.config web.config
-    cd $depth
-],[LN_S='$LN_S'])
-
-AC_CONFIG_COMMANDS([runtime/etc/mono/browscap.ini],
-[   depth=../../..
-    case $srcdir in
-    [[\\/$]]* | ?:[[\\/]]* ) reldir=$srcdir ;;
-    .) reldir=$depth ;;
-    *) reldir=$depth/$srcdir ;;
-    esac
-    $ac_aux_dir/install-sh -d runtime/etc/mono/
-    cd runtime/etc/mono/
-    rm -f browscap.ini
-    $LN_S $reldir/data/browscap.ini browscap.ini
-    cd $depth
-],[LN_S='$LN_S'])
-
-AC_CONFIG_COMMANDS([runtime/etc/mono/2.0/Browsers/Compat.browser],
-[   depth=../../../../..
-    case $srcdir in
-    [[\\/$]]* | ?:[[\\/]]* ) reldir=$srcdir ;;
-    .) reldir=$depth ;;
-    *) reldir=$depth/$srcdir ;;
-    esac
-    $ac_aux_dir/install-sh -d runtime/etc/mono/2.0/Browsers/
-    cd runtime/etc/mono/2.0/Browsers
-    rm -f Compat.browser
-    $LN_S $reldir/data/Browsers/Compat.browser Compat.browser
-    cd $depth
-],[LN_S='$LN_S'])
-
-AC_CONFIG_COMMANDS([runtime/etc/mono/4.0/Browsers/Compat.browser],
-[   depth=../../../../..
-    case $srcdir in
-    [[\\/$]]* | ?:[[\\/]]* ) reldir=$srcdir ;;
-    .) reldir=$depth ;;
-    *) reldir=$depth/$srcdir ;;
-    esac
-    $ac_aux_dir/install-sh -d runtime/etc/mono/4.0/Browsers/
-    cd runtime/etc/mono/4.0/Browsers
-    rm -f Compat.browser
-    $LN_S $reldir/data/Browsers/Compat.browser Compat.browser
-    cd $depth
-],[LN_S='$LN_S'])
-
-AC_CONFIG_COMMANDS([runtime/etc/mono/4.5/Browsers/Compat.browser],
-[   depth=../../../../..
-    case $srcdir in
-    [[\\/$]]* | ?:[[\\/]]* ) reldir=$srcdir ;;
-    .) reldir=$depth ;;
-    *) reldir=$depth/$srcdir ;;
-    esac
-    $ac_aux_dir/install-sh -d runtime/etc/mono/4.5/Browsers/
-    cd runtime/etc/mono/4.5/Browsers
-    rm -f Compat.browser
-    $LN_S $reldir/data/Browsers/Compat.browser Compat.browser
-    cd $depth
-],[LN_S='$LN_S'])
-
-AC_CONFIG_COMMANDS([runtime/etc/mono/4.0/machine.config],
-[   depth=../../../..
-    case $srcdir in
-    [[\\/$]]* | ?:[[\\/]]* ) reldir=$srcdir ;;
-    .) reldir=$depth ;;
-    *) reldir=$depth/$srcdir ;;
-    esac
-    $ac_aux_dir/install-sh -d runtime/etc/mono/4.0
-    cd runtime/etc/mono/4.0
-    rm -f machine.config
-    $LN_S $reldir/data/net_4_0/machine.config machine.config
-    cd $depth
-],[LN_S='$LN_S'])
-
-AC_CONFIG_COMMANDS([runtime/etc/mono/4.0/web.config],
-[   depth=../../../..
-    case $srcdir in
-    [[\\/$]]* | ?:[[\\/]]* ) reldir=$srcdir ;;
-    .) reldir=$depth ;;
-    *) reldir=$depth/$srcdir ;;
-    esac
-    $ac_aux_dir/install-sh -d runtime/etc/mono/4.0
-    cd runtime/etc/mono/4.0
-    rm -f web.config
-    $LN_S $reldir/data/net_4_0/web.config web.config
-    cd $depth
-],[LN_S='$LN_S'])
-
-AC_CONFIG_COMMANDS([runtime/etc/mono/4.5/machine.config],
-[   depth=../../../..
-    case $srcdir in
-    [[\\/$]]* | ?:[[\\/]]* ) reldir=$srcdir ;;
-    .) reldir=$depth ;;
-    *) reldir=$depth/$srcdir ;;
-    esac
-    $ac_aux_dir/install-sh -d runtime/etc/mono/4.5
-    cd runtime/etc/mono/4.5
-    rm -f machine.config
-    $LN_S $reldir/data/net_4_5/machine.config machine.config
-    cd $depth
-],[LN_S='$LN_S'])
-
-AC_CONFIG_COMMANDS([runtime/etc/mono/4.5/web.config],
-[   depth=../../../..
-    case $srcdir in
-    [[\\/$]]* | ?:[[\\/]]* ) reldir=$srcdir ;;
-    .) reldir=$depth ;;
-    *) reldir=$depth/$srcdir ;;
-    esac
-    $ac_aux_dir/install-sh -d runtime/etc/mono/4.5
-    cd runtime/etc/mono/4.5
-    rm -f web.config
-    $LN_S $reldir/data/net_4_5/web.config web.config
-    cd $depth
-],[LN_S='$LN_S'])
 
 AC_CONFIG_COMMANDS([quiet-libtool], [sed -e 's/echo "copying selected/# "copying selected/g' < libtool > libtool.tmp && mv libtool.tmp libtool && chmod a+x libtool; sed -e 's/$ECHO "copying selected/# "copying selected/g' < libtool > libtool.tmp && mv libtool.tmp libtool && chmod a+x libtool])
 
