@@ -50,10 +50,9 @@ ILASM = $(RUNTIME) $(CLASS)/ilasm.exe
 AM_CFLAGS = \
 	-I$(top_srcdir) 	\
 	$(GLIB_CFLAGS)		\
-	$(LLVM_CFLAGS)		\
 	$(PLATFORM_CFLAGS) $(ARCH_CFLAGS)
 
-AM_CXXFLAGS = $(LLVM_CXXFLAGS) $(GLIB_CFLAGS)
+AM_CXXFLAGS = $(GLIB_CFLAGS)
 
 if HOST_WIN32
 export HOST_CC
@@ -91,75 +90,23 @@ endif
 
 mono_bin_suffix = sgen
 
-if DISABLE_EXECUTABLES
-else
-mono: mono-$(mono_bin_suffix)
-	ln -sf $< $@
-
-mono.exe: mono-$(mono_bin_suffix).exe
-	ln -sf $< $@
-
-install-exec-hook:
-	(cd $(DESTDIR)$(bindir) && ln -sf mono-$(mono_bin_suffix) mono)
-	(cd $(DESTDIR)$(libdir); shopt -s nullglob 2>/dev/null; for i in libmono$(libmono_suffix)*; do ln -sf $$i `echo $$i | sed s/$(libmono_suffix)//` ; done)
-endif
-
-if DISABLE_EXECUTABLES
-else
-if HOST_WIN32
-bin_PROGRAMS = $(sgen_binaries) monow
-else
-bin_PROGRAMS = $(sgen_binaries)
-endif
-endif
-
-if DISABLE_EXECUTABLES
-noinst_PROGRAMS = genmdesc
-else
-noinst_PROGRAMS = genmdesc mono
-endif
-
-if DISABLE_EXECUTABLES
-shared_libraries = $(sgen_libraries)
-else
-if SHARED_MONO
-shared_libraries = $(sgen_libraries)
-endif
-endif
-
-lib_LTLIBRARIES = $(shared_libraries)
-
 if SHARED_MONO
 mini_common_lib = libmini.la
 else
 mini_common_lib = 
 endif
 
-if DISABLE_EXECUTABLES
-noinst_LTLIBRARIES = $(mini_common_lib)
-else
 noinst_LTLIBRARIES = $(mini_common_lib) libmini-static.la
-endif
 
 mono_CFLAGS = $(AM_CFLAGS)
 
 AM_CPPFLAGS = $(LIBGC_CPPFLAGS)
 
-mono_sgen_SOURCES = \
-	main-sgen.c
-
-mono_SOURCES = \
-	main-sgen.c
-
 mono_sgen_CFLAGS = $(AM_CFLAGS)
 
 # We build this after libmono was built so it contains the date when the final
 # link was done
-if DISABLE_EXECUTABLES
-buildver-sgen.h: libmini-static.la $(monodir)/mono/metadata/libmonoruntimesgen.la
-else
-buildver-sgen.h: libmini-static.la $(monodir)/mono/metadata/libmonoruntimesgen-static.la
-endif
+buildver-sgen.h: libmini-static.la $(monodir)/mono/metadata/libmonosgen.la
 	@echo "const char *build_date = \"`date`\";" > buildver-sgen.h
 mono_sgen-main-sgen.$(OBJEXT): buildver-sgen.h
 main-sgen.$(OBJEXT): buildver-sgen.h
@@ -176,38 +123,6 @@ MONO_DTRACE_OBJECT =
 LIBMONO_DTRACE_OBJECT = 
 endif
 
-if STATIC_MONO
-# Link libmono into mono statically
-# This leads to higher performance, especially with TLS
-MONO_SGEN_LIB=$(sgen_static_libraries)
-else 
-MONO_SGEN_LIB=libmonosgen-2.0.la
-endif
-
-if LOADED_LLVM
-LLVMMONOF=
-else
-LLVMMONOF=$(LLVM_LIBS) $(LLVM_LDFLAGS)
-endif
-
-mono_sgen_LDADD = \
-	$(MONO_SGEN_LIB)	\
-	$(GLIB_LIBS)		\
-	$(LLVMMONOF)		\
-	$(LIBICONV)		\
-	-lm			\
-	$(MONO_DTRACE_OBJECT)
-
-mono_sgen_LDFLAGS = $(static_flags) -export-dynamic $(monobinldflags) $(monobin_platform_ldflags)
-
-# if SUPPORT_SGEN
-# 
-# mono_LDADD = $(mono_sgen_LDADD)
-# mono_LDFLAGS = $(mono_sgen_LDFLAGS)
-# 
-# endif
-
-
 if DTRACE_G_REQUIRED
 
 mono-dtrace.$(OBJEXT): $(top_srcdir)/data/mono.d mini.lo $(monodir)/mono/metadata/libmonoruntime-static.la
@@ -219,26 +134,6 @@ mono-dtrace.$(OBJEXT): $(top_srcdir)/data/mono.d mini.lo $(monodir)/mono/metadat
 	--pic $@ $(top_srcdir)/data/mono.d $(monodir)/mono/metadata/libmonoruntime.la mini.lo
 
 endif
-
-# Create monow.exe, linked for the 'windows' subsystem
-if HOST_WIN32
-monow_LDADD = $(mono_sgen_LDADD)
-monow_LDFLAGS = $(mono_sgen_LDFLAGS) -mwindows
-monow_SOURCES = $(mono_sgen_SOURCES)
-endif
-
-genmdesc_SOURCES = \
-	mini.h		\
-	seq-points.h	\
-	genmdesc.c	\
-	helpers.c	\
-	../metadata/opcodes.c
-
-# Don't link this against libmonoruntime to speed up rebuilds
-genmdesc_LDADD = \
-	$(monodir)/mono/utils/libmonoutils.la -lm	\
-	$(GLIB_LIBS)					\
-	$(LIBICONV)
 
 x86_sources = \
 	mini-x86.c		\
@@ -304,16 +199,6 @@ windows_sources = \
 posix_sources = \
 	mini-posix.c
 
-if ENABLE_LLVM
-if LOADED_LLVM
-llvm_sources =
-else
-llvm_sources = \
-	mini-llvm.c		\
-	mini-llvm-cpp.cpp
-endif
-endif
-
 common_sources = \
 	mini.c			\
 	seq-points.c	\
@@ -374,8 +259,6 @@ common_sources = \
 	debugger-agent.h 	\
 	debugger-agent.c	\
 	xdebug.c			\
-	mini-llvm.h			\
-	mini-llvm-cpp.h	\
 	alias-analysis.c	\
 	mini-cross-helpers.c
 
@@ -489,7 +372,7 @@ os_sources = $(darwin_sources) $(posix_sources)
 monobin_platform_ldflags=-framework CoreFoundation -framework Foundation
 endif
 
-libmini_la_SOURCES = $(common_sources) $(llvm_sources) $(arch_sources) $(os_sources)
+libmini_la_SOURCES = $(common_sources) $(arch_sources) $(os_sources)
 libmini_la_CFLAGS = $(mono_CFLAGS)
 
 libmonosgen_2_0_la_SOURCES =
@@ -537,25 +420,7 @@ TestDriver.dll: $(srcdir)/TestDriver.cs
 generics-variant-types.dll: generics-variant-types.il
 	$(ILASM) -dll -output=$@ $<
 
-if NACL_CODEGEN
-GENMDESC_OPTS=--nacl
-else !NACL_CODEGEN
-GENMDESC_OPTS=
-endif !NACL_CODEGEN
-
-# we don't always use the perl impl because it's an additional
-# build dependency for the poor windows users
-# $(arch_define) is the preprocessor symbol that enables all the opcodes
-# for the specific platform in mini-ops.h
-if CROSS_COMPILING
 GENMDESC_PRG=perl $(srcdir)/genmdesc.pl $(arch_define) $(srcdir) $(GENMDESC_OPTS)
-else !CROSS_COMPILING
-if NACL_CODEGEN
-GENMDESC_PRG=perl $(srcdir)/genmdesc.pl $(arch_define) $(srcdir) $(GENMDESC_OPTS)
-else
-GENMDESC_PRG=./genmdesc $(GENMDESC_OPTS)
-endif
-endif !CROSS_COMPILING
 
 cpu-x86.h: cpu-x86.md genmdesc$(EXEEXT)
 	$(GENMDESC_PRG) cpu-x86.h x86_desc $(srcdir)/cpu-x86.md
@@ -603,36 +468,6 @@ endif
 
 gctest: mono gc-test.exe
 	MONO_DEBUG_OPTIONS=clear-nursery-at-gc $(RUNTIME) --regression gc-test.exe
-
-LLVM_AOT_RUNTIME_OPTS=$(if $(LLVM),--llvm,)
-GSHAREDVT_RUNTIME_OPTS=$(if $(GSHAREDVT),-O=gsharedvt,)
-
-aotcheck: mono $(regtests)
-	rm -rf *.exe.so *.exe.dylib *.exe.dylib.dSYM
-	$(RUNTIME) $(LLVM_AOT_RUNTIME_OPTS) --aot $(regtests) || exit 1
-	for i in $(regtests); do $(RUNTIME_AOTCHECK) --regression $$i || exit 1; done
-	rm -rf *.exe.so *.exe.dylib *.exe.dylib.dSYM
-
-llvmaotcheck:
-	$(MAKE) aotcheck LLVM=1
-
-gsharedvtcheck:
-	$(MAKE) fullaotcheck GSHAREDVT=1
-
-fullaot_regtests = $(regtests) aot-tests.exe $(if $(GSHAREDVT),gshared.exe)
-
-# This currently only works on amd64/arm
-fullaotcheck: mono $(fullaot_regtests)
-	rm -rf fullaot-tmp
-	mkdir fullaot-tmp
-	cp $(CLASS)/mscorlib.dll $(CLASS)/System.Core.dll $(CLASS)/System.dll $(CLASS)/Mono.Posix.dll $(CLASS)/System.Configuration.dll $(CLASS)/System.Security.dll $(CLASS)/System.Xml.dll $(CLASS)/Mono.Security.dll $(CLASS)/Mono.Simd.dll $(regtests) generics-variant-types.dll TestDriver.dll fullaot-tmp/
-	cp $(fullaot_regtests) fullaot-tmp/
-	MONO_PATH=fullaot-tmp $(top_builddir)/runtime/mono-wrapper $(LLVM_AOT_RUNTIME_OPTS) $(GSHAREDVT_RUNTIME_OPTS) --aot=full fullaot-tmp/* || exit 1
-	ln -s $$PWD/mono fullaot-tmp/
-	for i in $(fullaot_regtests); do echo $$i; MONO_PATH=fullaot-tmp $(top_builddir)/runtime/mono-wrapper --full-aot fullaot-tmp/$$i --exclude '!FULLAOT' || exit 1; done
-
-llvmfullaotcheck:
-	$(MAKE) fullaotcheck LLVM=1
 
 gccheck: gc-test.exe
 	MONO_GC_PARAMS=stack-mark=precise MONO_GC_DEBUG=clear-at-gc ./mono-sgen gc-test.exe	
@@ -709,8 +544,5 @@ patch-automake:
 tags:
 	etags -o TAGS `find .. -name "*.h" -o -name "*.c"`
 
-if HAS_EXTENSION_MODULE
-else
 Makefile.am: Makefile.am.in
 	cp $< $@
-endif
