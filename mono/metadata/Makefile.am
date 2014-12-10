@@ -34,7 +34,7 @@ endif
 #
 sgen_libraries = libsgen.la libsgen-static.la 
 
-noinst_LTLIBRARIES = $(shared_sgen_libraries)
+noinst_LTLIBRARIES = $(sgen_libraries)
 
 AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/mono $(LIBGC_CPPFLAGS) $(GLIB_CFLAGS) -DMONO_BINDIR=\"$(bindir)/\" -DMONO_ASSEMBLIES=\"$(assembliesdir)\" -DMONO_CFG_DIR=\"$(confdir)\"
 

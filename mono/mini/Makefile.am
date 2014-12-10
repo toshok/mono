@@ -375,11 +375,6 @@ endif
 libmini_la_SOURCES = $(common_sources) $(arch_sources) $(os_sources)
 libmini_la_CFLAGS = $(mono_CFLAGS)
 
-libmonosgen_2_0_la_SOURCES =
-libmonosgen_2_0_la_CFLAGS = $(mono_sgen_CFLAGS)
-libmonosgen_2_0_la_LIBADD = libmini.la $(sgen_libs) $(LIBMONO_DTRACE_OBJECT)
-libmonosgen_2_0_la_LDFLAGS = $(libmonoldflags)
-
 #
 # This library is shared between mono and mono-sgen, since the code in mini/ doesn't contain
 # compile time dependencies on boehm/sgen.
