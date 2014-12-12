@@ -52,23 +52,23 @@ guint8 *sgen_cardtable;
 static gboolean need_mod_union;
 
 #ifdef HEAVY_STATISTICS
-guint64 marked_cards;
-guint64 scanned_cards;
-guint64 scanned_objects;
-guint64 remarked_cards;
+uint64_t marked_cards;
+uint64_t scanned_cards;
+uint64_t scanned_objects;
+uint64_t remarked_cards;
 
-static guint64 los_marked_cards;
-static guint64 large_objects;
-static guint64 bloby_objects;
-static guint64 los_array_cards;
-static guint64 los_array_remsets;
+static uint64_t los_marked_cards;
+static uint64_t large_objects;
+static uint64_t bloby_objects;
+static uint64_t los_array_cards;
+static uint64_t los_array_remsets;
 
 #endif
-static guint64 major_card_scan_time;
-static guint64 los_card_scan_time;
+static uint64_t major_card_scan_time;
+static uint64_t los_card_scan_time;
 
-static guint64 last_major_scan_time;
-static guint64 last_los_scan_time;
+static uint64_t last_major_scan_time;
+static uint64_t last_los_scan_time;
 
 static void sgen_card_tables_collect_stats (gboolean begin);
 

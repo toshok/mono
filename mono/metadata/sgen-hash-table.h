@@ -5,8 +5,6 @@
 
 #ifdef HAVE_SGEN_GC
 
-#include <glib.h>
-
 /* hash tables */
 
 typedef struct _SgenHashTableEntry SgenHashTableEntry;

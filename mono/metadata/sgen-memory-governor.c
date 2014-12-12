@@ -240,7 +240,7 @@ sgen_get_minor_collection_allowance (void)
 
 /* Negative value to remove */
 void
-mono_gc_add_memory_pressure (gint64 value)
+mono_gc_add_memory_pressure (int64_t value)
 {
 	/* FIXME: Use interlocked functions */
 	LOCK_GC;

@@ -49,7 +49,7 @@
 #define MAX_USER_DESCRIPTORS 16
 
 #define MAKE_ROOT_DESC(type,val) ((type) | ((val) << ROOT_DESC_TYPE_SHIFT))
-#define ALIGN_TO(val,align) ((((guint64)val) + ((align) - 1)) & ~((align) - 1))
+#define ALIGN_TO(val,align) ((((uint64_t)val) + ((align) - 1)) & ~((align) - 1))
 
 
 static gsize* complex_descriptors = NULL;
@@ -60,8 +60,8 @@ static int user_descriptors_next = 0;
 static void *all_ref_root_descrs [32];
 
 #ifdef HEAVY_STATISTICS
-static guint64 stat_scanned_count_per_descriptor [DESC_TYPE_MAX];
-static guint64 stat_copied_count_per_descriptor [DESC_TYPE_MAX];
+static uint64_t stat_scanned_count_per_descriptor [DESC_TYPE_MAX];
+static uint64_t stat_copied_count_per_descriptor [DESC_TYPE_MAX];
 #endif
 
 static int

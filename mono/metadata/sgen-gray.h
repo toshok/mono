@@ -126,12 +126,12 @@ struct _SgenSectionGrayQueue {
 #define GRAY_FIRST_CURSOR_POSITION(s) ((s)->entries)
 
 #ifdef HEAVY_STATISTICS
-extern guint64 stat_gray_queue_section_alloc;
-extern guint64 stat_gray_queue_section_free;
-extern guint64 stat_gray_queue_enqueue_fast_path;
-extern guint64 stat_gray_queue_dequeue_fast_path;
-extern guint64 stat_gray_queue_enqueue_slow_path;
-extern guint64 stat_gray_queue_dequeue_slow_path;
+extern uint64_t stat_gray_queue_section_alloc;
+extern uint64_t stat_gray_queue_section_free;
+extern uint64_t stat_gray_queue_enqueue_fast_path;
+extern uint64_t stat_gray_queue_dequeue_fast_path;
+extern uint64_t stat_gray_queue_enqueue_slow_path;
+extern uint64_t stat_gray_queue_dequeue_slow_path;
 #endif
 
 void sgen_init_gray_queues (void) MONO_INTERNAL;

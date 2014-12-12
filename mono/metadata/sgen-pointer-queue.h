@@ -20,8 +20,6 @@
 #ifndef __MONO_SGEN_POINTER_QUEUE_H__
 #define __MONO_SGEN_POINTER_QUEUE_H__
 
-#include <glib.h>
-
 typedef struct {
 	void **data;
 	size_t size;

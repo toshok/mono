@@ -930,10 +930,10 @@ dump_color_table (const char *why, gboolean do_index)
 }
 #endif
 
-static gint64
-step_timer (gint64 *timer)
+static int64_t
+step_timer (int64_t *timer)
 {
-	gint64 curtime, diff;
+	int64_t curtime, diff;
 
 	SGEN_TV_GETTIME (curtime); 
 	diff = SGEN_TV_ELAPSED (*timer, curtime);
@@ -945,7 +945,7 @@ processing_stw_step (void)
 {
 	int i;
 	int bridge_count;
-	gint64 curtime;
+	int64_t curtime;
 
 	if (!dyn_array_ptr_size (&registered_bridges))
 		return;
@@ -1033,7 +1033,7 @@ processing_build_callback_data (int generation)
 	int j, api_index;
 	MonoGCBridgeSCC **api_sccs;
 	MonoGCBridgeXRef *api_xrefs;
-	gint64 curtime;
+	int64_t curtime;
 	ColorBucket *cur;
 
 	g_assert (bridge_processor->num_sccs == 0 && bridge_processor->num_xrefs == 0);
@@ -1137,7 +1137,7 @@ processing_build_callback_data (int generation)
 static void
 processing_after_callback (int generation)
 {
-	gint64 curtime;
+	int64_t curtime;
 	int bridge_count = dyn_array_ptr_size (&registered_bridges);
 	int object_count = object_data_count;
 	int color_count = color_data_count;

@@ -293,23 +293,23 @@ static gboolean do_dump_nursery_content = FALSE;
 static gboolean enable_nursery_canaries = FALSE;
 
 #ifdef HEAVY_STATISTICS
-guint64 stat_objects_alloced_degraded = 0;
-guint64 stat_bytes_alloced_degraded = 0;
+uint64_t stat_objects_alloced_degraded = 0;
+uint64_t stat_bytes_alloced_degraded = 0;
 
-guint64 stat_copy_object_called_nursery = 0;
-guint64 stat_objects_copied_nursery = 0;
-guint64 stat_copy_object_called_major = 0;
-guint64 stat_objects_copied_major = 0;
+uint64_t stat_copy_object_called_nursery = 0;
+uint64_t stat_objects_copied_nursery = 0;
+uint64_t stat_copy_object_called_major = 0;
+uint64_t stat_objects_copied_major = 0;
 
-guint64 stat_scan_object_called_nursery = 0;
-guint64 stat_scan_object_called_major = 0;
+uint64_t stat_scan_object_called_nursery = 0;
+uint64_t stat_scan_object_called_major = 0;
 
-guint64 stat_slots_allocated_in_vain;
+uint64_t stat_slots_allocated_in_vain;
 
-guint64 stat_nursery_copy_object_failed_from_space = 0;
-guint64 stat_nursery_copy_object_failed_forwarded = 0;
-guint64 stat_nursery_copy_object_failed_pinned = 0;
-guint64 stat_nursery_copy_object_failed_to_space = 0;
+uint64_t stat_nursery_copy_object_failed_from_space = 0;
+uint64_t stat_nursery_copy_object_failed_forwarded = 0;
+uint64_t stat_nursery_copy_object_failed_pinned = 0;
+uint64_t stat_nursery_copy_object_failed_to_space = 0;
 
 static int stat_wbarrier_add_to_global_remset = 0;
 static int stat_wbarrier_set_field = 0;
@@ -322,32 +322,32 @@ static int stat_wbarrier_value_copy = 0;
 static int stat_wbarrier_object_copy = 0;
 #endif
 
-static guint64 stat_pinned_objects = 0;
+static uint64_t stat_pinned_objects = 0;
 
-static guint64 time_minor_pre_collection_fragment_clear = 0;
-static guint64 time_minor_pinning = 0;
-static guint64 time_minor_scan_remsets = 0;
-static guint64 time_minor_scan_pinned = 0;
-static guint64 time_minor_scan_registered_roots = 0;
-static guint64 time_minor_scan_thread_data = 0;
-static guint64 time_minor_finish_gray_stack = 0;
-static guint64 time_minor_fragment_creation = 0;
+static uint64_t time_minor_pre_collection_fragment_clear = 0;
+static uint64_t time_minor_pinning = 0;
+static uint64_t time_minor_scan_remsets = 0;
+static uint64_t time_minor_scan_pinned = 0;
+static uint64_t time_minor_scan_registered_roots = 0;
+static uint64_t time_minor_scan_thread_data = 0;
+static uint64_t time_minor_finish_gray_stack = 0;
+static uint64_t time_minor_fragment_creation = 0;
 
-static guint64 time_major_pre_collection_fragment_clear = 0;
-static guint64 time_major_pinning = 0;
-static guint64 time_major_scan_pinned = 0;
-static guint64 time_major_scan_registered_roots = 0;
-static guint64 time_major_scan_thread_data = 0;
-static guint64 time_major_scan_alloc_pinned = 0;
-static guint64 time_major_scan_finalized = 0;
-static guint64 time_major_scan_big_objects = 0;
-static guint64 time_major_finish_gray_stack = 0;
-static guint64 time_major_free_bigobjs = 0;
-static guint64 time_major_los_sweep = 0;
-static guint64 time_major_sweep = 0;
-static guint64 time_major_fragment_creation = 0;
+static uint64_t time_major_pre_collection_fragment_clear = 0;
+static uint64_t time_major_pinning = 0;
+static uint64_t time_major_scan_pinned = 0;
+static uint64_t time_major_scan_registered_roots = 0;
+static uint64_t time_major_scan_thread_data = 0;
+static uint64_t time_major_scan_alloc_pinned = 0;
+static uint64_t time_major_scan_finalized = 0;
+static uint64_t time_major_scan_big_objects = 0;
+static uint64_t time_major_finish_gray_stack = 0;
+static uint64_t time_major_free_bigobjs = 0;
+static uint64_t time_major_los_sweep = 0;
+static uint64_t time_major_sweep = 0;
+static uint64_t time_major_fragment_creation = 0;
 
-static guint64 time_max = 0;
+static uint64_t time_max = 0;
 
 static SGEN_TV_DECLARE (time_major_conc_collection_start);
 static SGEN_TV_DECLARE (time_major_conc_collection_end);
@@ -374,7 +374,7 @@ mono_gc_flush_info (void)
 
 SGEN_TV_DECLARE (sgen_init_timestamp);
 
-#define ALIGN_TO(val,align) ((((guint64)val) + ((align) - 1)) & ~((align) - 1))
+#define ALIGN_TO(val,align) ((((uint64_t)val) + ((align) - 1)) & ~((align) - 1))
 
 NurseryClearPolicy nursery_clear_policy = CLEAR_AT_TLAB_CREATION;
 
@@ -4410,7 +4410,7 @@ mono_gc_collection_count (int generation)
 int64_t
 mono_gc_get_used_size (void)
 {
-	gint64 tot = 0;
+	int64_t tot = 0;
 	LOCK_GC;
 	tot = los_memory_usage;
 	tot += nursery_section->next_data - nursery_section->data;
@@ -4427,7 +4427,7 @@ mono_gc_get_los_limit (void)
 }
 
 void
-mono_gc_set_string_length (MonoString *str, gint32 new_length)
+mono_gc_set_string_length (MonoString *str, int32_t new_length)
 {
 	mono_unichar2 *new_end = str->chars + new_length;
 	
@@ -5420,7 +5420,7 @@ mono_gc_get_vtable_bits (MonoClass *class)
 }
 
 void
-mono_gc_register_altstack (gpointer stack, gint32 stack_size, gpointer altstack, gint32 altstack_size)
+mono_gc_register_altstack (gpointer stack, int32_t stack_size, gpointer altstack, int32_t altstack_size)
 {
 	// FIXME:
 }
@@ -5444,7 +5444,7 @@ sgen_gc_event_moves (void)
 	}
 }
 
-gint64
+int64_t
 sgen_timestamp (void)
 {
 	SGEN_TV_DECLARE (timestamp);

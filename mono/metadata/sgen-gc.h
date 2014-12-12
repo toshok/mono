@@ -30,7 +30,6 @@
 typedef struct _SgenThreadInfo SgenThreadInfo;
 #define THREAD_INFO_TYPE SgenThreadInfo
 
-#include <glib.h>
 #ifdef HAVE_PTHREAD_H
 #include <pthread.h>
 #endif
@@ -64,7 +63,7 @@ typedef enum {
 
 NurseryClearPolicy sgen_get_nursery_clear_policy (void) MONO_INTERNAL;
 
-#define SGEN_TV_DECLARE(name) gint64 name
+#define SGEN_TV_DECLARE(name) int64_t name
 #define SGEN_TV_GETTIME(tv) tv = mono_100ns_ticks ()
 #define SGEN_TV_ELAPSED(start,end) (int)((end-start))
 
@@ -188,10 +187,10 @@ extern LOCK_DECLARE (sgen_interruption_mutex);
 #endif
 
 #ifdef HEAVY_STATISTICS
-extern guint64 stat_objects_alloced_degraded;
-extern guint64 stat_bytes_alloced_degraded;
-extern guint64 stat_copy_object_called_major;
-extern guint64 stat_objects_copied_major;
+extern uint64_t stat_objects_alloced_degraded;
+extern uint64_t stat_bytes_alloced_degraded;
+extern uint64_t stat_copy_object_called_major;
+extern uint64_t stat_objects_copied_major;
 #endif
 
 #define SGEN_ASSERT(level, a, ...) do {	\
@@ -700,7 +699,7 @@ struct _SgenMajorCollector {
 	void (*sweep) (void);
 	void (*check_scan_starts) (void);
 	void (*dump_heap) (FILE *heap_dump_file);
-	gint64 (*get_used_size) (void);
+	int64_t (*get_used_size) (void);
 	void (*start_nursery_collection) (void);
 	void (*finish_nursery_collection) (void);
 	void (*start_major_collection) (void);
@@ -1193,7 +1192,7 @@ void sgen_env_var_error (const char *env_var, const char *fallback, const char *
 /* Utilities */
 
 void sgen_qsort (void *base, size_t nel, size_t width, int (*compar) (const void*, const void*)) MONO_INTERNAL;
-gint64 sgen_timestamp (void) MONO_INTERNAL;
+int64_t sgen_timestamp (void) MONO_INTERNAL;
 
 /*
  * Canary (guard word) support

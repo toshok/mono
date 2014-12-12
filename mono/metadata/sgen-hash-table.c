@@ -30,9 +30,9 @@
 #include <mono/utils/mono-counters.h>
 
 #ifdef HEAVY_STATISTICS
-static guint64 stat_lookups;
-static guint64 stat_lookup_iterations;
-static guint64 stat_lookup_max_iterations;
+static uint64_t stat_lookups;
+static uint64_t stat_lookup_iterations;
+static uint64_t stat_lookup_max_iterations;
 #endif
 
 static void
@@ -82,7 +82,7 @@ lookup (SgenHashTable *hash_table, gpointer key, guint *_hash)
 	guint hash;
 	GEqualFunc equal = hash_table->equal_func;
 #ifdef HEAVY_STATISTICS
-	guint64 iterations = 0;
+	uint64_t iterations = 0;
 	++stat_lookups;
 #endif
 

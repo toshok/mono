@@ -201,8 +201,8 @@ count_cards (long long *major_total, long long *major_marked, long long *los_tot
 static TV_DECLARE (stop_world_time);
 static unsigned long max_pause_usec = 0;
 
-static guint64 time_stop_world;
-static guint64 time_restart_world;
+static uint64_t time_stop_world;
+static uint64_t time_restart_world;
 
 /* LOCKING: assumes the GC lock is held */
 int

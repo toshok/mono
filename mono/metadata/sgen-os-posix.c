@@ -29,7 +29,6 @@
 #if !defined(__MACH__) && !MONO_MACH_ARCH_SUPPORTED && defined(HAVE_PTHREAD_KILL)
 
 #include <errno.h>
-#include <glib.h>
 #include "metadata/sgen-gc.h"
 #include "metadata/gc-internal.h"
 #include "metadata/sgen-archdep.h"

@@ -321,14 +321,14 @@ register_for_finalization (MonoObject *obj, void *user_data, int generation)
 #define STAGE_ENTRY_INVALID	3
 
 typedef struct {
-	volatile gint32 state;
+	volatile int32_t state;
 	MonoObject *obj;
 	void *user_data;
 } StageEntry;
 
 #define NUM_FIN_STAGE_ENTRIES	1024
 
-static volatile gint32 next_fin_stage_entry = 0;
+static volatile int32_t next_fin_stage_entry = 0;
 static StageEntry fin_stage_entries [NUM_FIN_STAGE_ENTRIES];
 
 /*
@@ -337,7 +337,7 @@ static StageEntry fin_stage_entries [NUM_FIN_STAGE_ENTRIES];
  * thread operating on the queue.
  */
 static void
-lock_stage_for_processing (volatile gint32 *next_entry)
+lock_stage_for_processing (volatile int32_t *next_entry)
 {
 	*next_entry = -1;
 }
@@ -349,9 +349,9 @@ lock_stage_for_processing (volatile gint32 *next_entry)
  * atomically set `next_index`, and only once that happened do we take the GC lock.
  */
 static gboolean
-try_lock_stage_for_processing (int num_entries, volatile gint32 *next_entry)
+try_lock_stage_for_processing (int num_entries, volatile int32_t *next_entry)
 {
-	gint32 old = *next_entry;
+	int32_t old = *next_entry;
 	if (old < num_entries)
 		return FALSE;
 	return InterlockedCompareExchange (next_entry, -1, old) == old;
@@ -359,7 +359,7 @@ try_lock_stage_for_processing (int num_entries, volatile gint32 *next_entry)
 
 /* LOCKING: requires that the GC lock is held */
 static void
-process_stage_entries (int num_entries, volatile gint32 *next_entry, StageEntry *entries, void (*process_func) (MonoObject*, void*, int))
+process_stage_entries (int num_entries, volatile int32_t *next_entry, StageEntry *entries, void (*process_func) (MonoObject*, void*, int))
 {
 	int i;
 
@@ -374,7 +374,7 @@ process_stage_entries (int num_entries, volatile gint32 *next_entry, StageEntry 
 		return;
 
 	for (i = 0; i < num_entries; ++i) {
-		gint32 state;
+		int32_t state;
 
 	retry:
 		state = entries [i].state;
@@ -422,19 +422,19 @@ process_stage_entries (int num_entries, volatile gint32 *next_entry, StageEntry 
 }
 
 #ifdef HEAVY_STATISTICS
-static guint64 stat_overflow_abort = 0;
-static guint64 stat_wait_for_processing = 0;
-static guint64 stat_increment_other_thread = 0;
-static guint64 stat_index_decremented = 0;
-static guint64 stat_entry_invalidated = 0;
-static guint64 stat_success = 0;
+static uint64_t stat_overflow_abort = 0;
+static uint64_t stat_wait_for_processing = 0;
+static uint64_t stat_increment_other_thread = 0;
+static uint64_t stat_index_decremented = 0;
+static uint64_t stat_entry_invalidated = 0;
+static uint64_t stat_success = 0;
 #endif
 
 static int
-add_stage_entry (int num_entries, volatile gint32 *next_entry, StageEntry *entries, MonoObject *obj, void *user_data)
+add_stage_entry (int num_entries, volatile int32_t *next_entry, StageEntry *entries, MonoObject *obj, void *user_data)
 {
-	gint32 index, new_next_entry, old_next_entry;
-	gint32 previous_state;
+	int32_t index, new_next_entry, old_next_entry;
+	int32_t previous_state;
 
  retry:
 	for (;;) {
@@ -842,7 +842,7 @@ process_dislink_stage_entry (MonoObject *obj, void *_link, int index)
 
 #define NUM_DISLINK_STAGE_ENTRIES	1024
 
-static volatile gint32 next_dislink_stage_entry = 0;
+static volatile int32_t next_dislink_stage_entry = 0;
 static StageEntry dislink_stage_entries [NUM_DISLINK_STAGE_ENTRIES];
 
 /* LOCKING: requires that the GC lock is held */

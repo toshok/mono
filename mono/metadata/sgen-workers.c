@@ -50,7 +50,7 @@ enum {
  * | STATE_NURSERY_COLLECTION | 0         | 0                          |         0 |
  */
 typedef union {
-	gint32 value;
+	int32_t value;
 	struct {
 		guint state : 4; /* WorkersStateName */
 		/* Number of worker threads awake. */
@@ -73,10 +73,10 @@ static LOCK_DECLARE (workers_job_queue_mutex);
 static int workers_num_jobs_enqueued = 0;
 static volatile int workers_num_jobs_finished = 0;
 
-static guint64 stat_workers_stolen_from_self_lock;
-static guint64 stat_workers_stolen_from_self_no_lock;
-static guint64 stat_workers_stolen_from_others;
-static guint64 stat_workers_num_waited;
+static uint64_t stat_workers_stolen_from_self_lock;
+static uint64_t stat_workers_stolen_from_self_no_lock;
+static uint64_t stat_workers_stolen_from_others;
+static uint64_t stat_workers_num_waited;
 
 static gboolean
 set_state (State old_state, State new_state)

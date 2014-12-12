@@ -964,7 +964,7 @@ static int
 compare_hash_entries (const HashEntry *e1, const HashEntry *e2)
 {
 	/* We can cast to signed int here because finishing_time has only 31 bits. */
-	return (gint32)e2->v.dfs1.finishing_time - (gint32)e1->v.dfs1.finishing_time;
+	return (int32_t)e2->v.dfs1.finishing_time - (int32_t)e1->v.dfs1.finishing_time;
 }
 
 DEF_QSORT_INLINE(hash_entries, HashEntry*, compare_hash_entries)

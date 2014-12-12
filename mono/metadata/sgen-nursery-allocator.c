@@ -113,16 +113,16 @@ size_t sgen_space_bitmap_size MONO_INTERNAL;
 
 #ifdef HEAVY_STATISTICS
 
-static gint32 stat_wasted_bytes_trailer = 0;
-static gint32 stat_wasted_bytes_small_areas = 0;
-static gint32 stat_wasted_bytes_discarded_fragments = 0;
-static gint32 stat_nursery_alloc_requests = 0;
-static gint32 stat_alloc_iterations = 0;
-static gint32 stat_alloc_retries = 0;
+static int32_t stat_wasted_bytes_trailer = 0;
+static int32_t stat_wasted_bytes_small_areas = 0;
+static int32_t stat_wasted_bytes_discarded_fragments = 0;
+static int32_t stat_nursery_alloc_requests = 0;
+static int32_t stat_alloc_iterations = 0;
+static int32_t stat_alloc_retries = 0;
 
-static gint32 stat_nursery_alloc_range_requests = 0;
-static gint32 stat_alloc_range_iterations = 0;
-static gint32 stat_alloc_range_retries = 0;
+static int32_t stat_nursery_alloc_range_requests = 0;
+static int32_t stat_alloc_range_iterations = 0;
+static int32_t stat_alloc_range_retries = 0;
 
 #endif
 
@@ -670,11 +670,13 @@ sgen_clear_nursery_fragments (void)
 void
 sgen_clear_range (char *start, char *end)
 {
-	MonoArray *o;
 	size_t size = end - start;
 
 	if ((start && !end) || (start > end))
 		g_error ("Invalid range [%p %p]", start, end);
+
+#if MONO_SPECIFIC
+	MonoArray *o;
 
 	if (size < sizeof (MonoArray)) {
 		memset (start, 0, size);
@@ -689,6 +691,9 @@ sgen_clear_range (char *start, char *end)
 	o->max_length = (mono_array_size_t)(size - sizeof (MonoArray));
 	sgen_set_nursery_scan_start (start);
 	g_assert (start + sgen_safe_object_get_size ((MonoObject*)o) == end);
+#else
+	memset (start, 0, size);
+#endif
 }
 
 void

@@ -21,14 +21,14 @@
 
 #include "mono/utils/mono-compiler.h"
 
-extern guint64 stat_copy_object_called_nursery;
-extern guint64 stat_objects_copied_nursery;
+extern uint64_t stat_copy_object_called_nursery;
+extern uint64_t stat_objects_copied_nursery;
 
-extern guint64 stat_nursery_copy_object_failed_from_space;
-extern guint64 stat_nursery_copy_object_failed_forwarded;
-extern guint64 stat_nursery_copy_object_failed_pinned;
+extern uint64_t stat_nursery_copy_object_failed_from_space;
+extern uint64_t stat_nursery_copy_object_failed_forwarded;
+extern uint64_t stat_nursery_copy_object_failed_pinned;
 
-extern guint64 stat_slots_allocated_in_vain;
+extern uint64_t stat_slots_allocated_in_vain;
 
 /*
  * Copies an object and enqueues it if a queue is given.

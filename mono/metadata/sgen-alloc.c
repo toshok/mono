@@ -52,7 +52,7 @@
 #define ALIGN_UP		SGEN_ALIGN_UP
 #define ALLOC_ALIGN		SGEN_ALLOC_ALIGN
 #define MAX_SMALL_OBJ_SIZE	SGEN_MAX_SMALL_OBJ_SIZE
-#define ALIGN_TO(val,align) ((((guint64)val) + ((align) - 1)) & ~((align) - 1))
+#define ALIGN_TO(val,align) ((((uint64_t)val) + ((align) - 1)) & ~((align) - 1))
 
 #define OPDEF(a,b,c,d,e,f,g,h,i,j) \
 	a = i,
@@ -67,9 +67,9 @@ enum {
 static gboolean use_managed_allocator = TRUE;
 
 #ifdef HEAVY_STATISTICS
-static guint64 stat_objects_alloced = 0;
-static guint64 stat_bytes_alloced = 0;
-static guint64 stat_bytes_alloced_los = 0;
+static uint64_t stat_objects_alloced = 0;
+static uint64_t stat_bytes_alloced = 0;
+static uint64_t stat_bytes_alloced_los = 0;
 
 #endif
 
@@ -588,7 +588,7 @@ mono_gc_alloc_array (MonoVTable *vtable, size_t size, uintptr_t max_length, uint
 }
 
 void*
-mono_gc_alloc_string (MonoVTable *vtable, size_t size, gint32 len)
+mono_gc_alloc_string (MonoVTable *vtable, size_t size, int32_t len)
 {
 	MonoString *str;
 	TLAB_ACCESS_INIT;

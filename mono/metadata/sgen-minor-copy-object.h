@@ -22,7 +22,7 @@
 #define collector_pin_object(obj, queue) sgen_pin_object (obj, queue);
 #define COLLECTOR_SERIAL_ALLOC_FOR_PROMOTION alloc_for_promotion
 
-extern guint64 stat_nursery_copy_object_failed_to_space; /* from sgen-gc.c */
+extern uint64_t stat_nursery_copy_object_failed_to_space; /* from sgen-gc.c */
 
 #include "mono/utils/mono-compiler.h"
 

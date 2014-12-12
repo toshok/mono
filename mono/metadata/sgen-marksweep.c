@@ -169,20 +169,20 @@ static size_t num_major_sections = 0;
 /* one free block list for each block object size */
 static MSBlockInfo **free_block_lists [MS_BLOCK_TYPE_MAX];
 
-static guint64 stat_major_blocks_alloced = 0;
-static guint64 stat_major_blocks_freed = 0;
-static guint64 stat_major_blocks_lazy_swept = 0;
-static guint64 stat_major_objects_evacuated = 0;
+static uint64_t stat_major_blocks_alloced = 0;
+static uint64_t stat_major_blocks_freed = 0;
+static uint64_t stat_major_blocks_lazy_swept = 0;
+static uint64_t stat_major_objects_evacuated = 0;
 
 #if SIZEOF_VOID_P != 8
-static guint64 stat_major_blocks_freed_ideal = 0;
-static guint64 stat_major_blocks_freed_less_ideal = 0;
-static guint64 stat_major_blocks_freed_individual = 0;
-static guint64 stat_major_blocks_alloced_less_ideal = 0;
+static uint64_t stat_major_blocks_freed_ideal = 0;
+static uint64_t stat_major_blocks_freed_less_ideal = 0;
+static uint64_t stat_major_blocks_freed_individual = 0;
+static uint64_t stat_major_blocks_alloced_less_ideal = 0;
 #endif
 
 #ifdef SGEN_COUNT_NUMBER_OF_MAJOR_OBJECTS_MARKED
-static guint64 num_major_objects_marked = 0;
+static uint64_t num_major_objects_marked = 0;
 #define INC_NUM_MAJOR_OBJECTS_MARKED()	(++num_major_objects_marked)
 #else
 #define INC_NUM_MAJOR_OBJECTS_MARKED()
@@ -904,22 +904,22 @@ major_get_and_reset_num_major_objects_marked (void)
 }
 
 #ifdef HEAVY_STATISTICS
-static guint64 stat_optimized_copy;
-static guint64 stat_optimized_copy_nursery;
-static guint64 stat_optimized_copy_nursery_forwarded;
-static guint64 stat_optimized_copy_nursery_pinned;
-static guint64 stat_optimized_copy_major;
-static guint64 stat_optimized_copy_major_small_fast;
-static guint64 stat_optimized_copy_major_small_slow;
-static guint64 stat_optimized_copy_major_large;
-static guint64 stat_optimized_copy_major_forwarded;
-static guint64 stat_optimized_copy_major_small_evacuate;
-static guint64 stat_optimized_major_scan;
-static guint64 stat_optimized_major_scan_no_refs;
+static uint64_t stat_optimized_copy;
+static uint64_t stat_optimized_copy_nursery;
+static uint64_t stat_optimized_copy_nursery_forwarded;
+static uint64_t stat_optimized_copy_nursery_pinned;
+static uint64_t stat_optimized_copy_major;
+static uint64_t stat_optimized_copy_major_small_fast;
+static uint64_t stat_optimized_copy_major_small_slow;
+static uint64_t stat_optimized_copy_major_large;
+static uint64_t stat_optimized_copy_major_forwarded;
+static uint64_t stat_optimized_copy_major_small_evacuate;
+static uint64_t stat_optimized_major_scan;
+static uint64_t stat_optimized_major_scan_no_refs;
 
-static guint64 stat_drain_prefetch_fills;
-static guint64 stat_drain_prefetch_fill_failures;
-static guint64 stat_drain_loops;
+static uint64_t stat_drain_prefetch_fills;
+static uint64_t stat_drain_prefetch_fill_failures;
+static uint64_t stat_drain_loops;
 #endif
 
 static void major_scan_object_with_evacuation (char *start, mword desc, SgenGrayQueue *queue);
@@ -1552,10 +1552,10 @@ major_report_pinned_memory_usage (void)
 	g_assert_not_reached ();
 }
 
-static gint64
+static int64_t
 major_get_used_size (void)
 {
-	gint64 size = 0;
+	int64_t size = 0;
 	MSBlockInfo *block;
 
 	FOREACH_BLOCK (block) {
@@ -1621,10 +1621,10 @@ major_iterate_live_block_ranges (sgen_cardtable_block_callback callback)
 }
 
 #ifdef HEAVY_STATISTICS
-extern guint64 marked_cards;
-extern guint64 scanned_cards;
-extern guint64 scanned_objects;
-extern guint64 remarked_cards;
+extern uint64_t marked_cards;
+extern uint64_t scanned_cards;
+extern uint64_t scanned_objects;
+extern uint64_t remarked_cards;
 #endif
 
 #define CARD_WORDS_PER_BLOCK (CARDS_PER_BLOCK / SIZEOF_VOID_P)

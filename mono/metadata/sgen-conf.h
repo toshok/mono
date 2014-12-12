@@ -22,14 +22,14 @@
 #ifndef __MONO_SGENCONF_H__
 #define __MONO_SGENCONF_H__
 
-#include <glib.h>
+#include <stdint.h>
 
 /*Basic defines and static tunables */
 
 #if SIZEOF_VOID_P == 4
-typedef guint32 mword;
+typedef uint32_t mword;
 #else
-typedef guint64 mword;
+typedef uint64_t mword;
 #endif
 
 

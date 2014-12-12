@@ -27,7 +27,6 @@
 #ifdef HAVE_SGEN_GC
 
 
-#include <glib.h>
 #include "metadata/sgen-gc.h"
 #include "metadata/sgen-archdep.h"
 #include "metadata/sgen-protocol.h"

@@ -254,6 +254,8 @@ noinst_PROGRAMS = test-sgen
 test_sgen_SOURCES = test-sgen.c
 
 test_sgen_CFLAGS = $(AM_CFLAGS)
+test_sgen_LDADD = libsgen.la ../utils/libmonoutils.la ../../eglib/src/libeglib.la ../io-layer/libwapi.la
+test_sgen_LDFLAGS = -liconv -lObjC -framework CoreFoundation
 
 EXTRA_DIST = make-bundle.pl sample-bundle $(win32_sources) $(unix_sources) $(null_sources) runtime.h \
 		tpool-poll.c tpool-epoll.c tpool-kqueue.c
