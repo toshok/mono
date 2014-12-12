@@ -1127,6 +1127,8 @@ finalizer_thread (gpointer unused)
 	return 0;
 }
 
+#define LAZY_GC_THREAD_CREATION 1
+
 #ifndef LAZY_GC_THREAD_CREATION
 static
 #endif
