@@ -427,7 +427,6 @@ enum {
 	INTERNAL_MEM_MS_TABLES,
 	INTERNAL_MEM_MS_BLOCK_INFO,
 	INTERNAL_MEM_MS_BLOCK_INFO_SORT,
-	INTERNAL_MEM_EPHEMERON_LINK,
 	INTERNAL_MEM_WORKER_DATA,
 	INTERNAL_MEM_WORKER_JOB_DATA,
 	INTERNAL_MEM_BRIDGE_DATA,
@@ -446,7 +445,7 @@ enum {
 	INTERNAL_MEM_CARDTABLE_MOD_UNION,
 	INTERNAL_MEM_BINARY_PROTOCOL,
 	INTERNAL_MEM_TEMPORARY,
-	INTERNAL_MEM_MAX
+	INTERNAL_MEM_FIRST_CLIENT
 };
 
 enum {
@@ -1264,7 +1263,9 @@ gboolean nursery_canaries_enabled (void) MONO_INTERNAL;
 					canary_copy[CANARY_SIZE] = 0;	\
 					g_error ("CORRUPT CANARY:\naddr->%p\ntype->%s\nexcepted->'%s'\nfound->'%s'\n", (char*) addr, ((MonoObject*)addr)->vtable->klass->name, CANARY_STRING, canary_copy);	\
 				} }
-				 
+
+#include "metadata/sgen-client-mono.h"
+
 #endif /* HAVE_SGEN_GC */
 
 #endif /* __MONO_SGENGC_H__ */
