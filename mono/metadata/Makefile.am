@@ -272,7 +272,8 @@ sgen_sources = \
 	sgen-layout-stats.h	\
 	sgen-qsort.c	\
 	sgen-qsort.h	\
-	sgen-tagged-pointer.h
+	sgen-tagged-pointer.h	\
+	sgen-mono.c
 
 libmonoruntime_la_SOURCES = $(common_sources) $(gc_dependent_sources) $(null_gc_sources) $(boehm_sources)
 libmonoruntime_la_CFLAGS = $(BOEHM_DEFINES)
