@@ -495,9 +495,10 @@ void sgen_free_internal (void *addr, int type) MONO_INTERNAL;
 void* sgen_alloc_internal_dynamic (size_t size, int type, gboolean assert_on_failure) MONO_INTERNAL;
 void sgen_free_internal_dynamic (void *addr, size_t size, int type) MONO_INTERNAL;
 
-void sgen_pin_stats_register_object (char *obj, size_t size);
-void sgen_pin_stats_register_global_remset (char *obj);
-void sgen_pin_stats_print_class_stats (void);
+void sgen_pin_stats_enable (void) MONO_INTERNAL;
+void sgen_pin_stats_register_object (char *obj, size_t size) MONO_INTERNAL;
+void sgen_pin_stats_register_global_remset (char *obj) MONO_INTERNAL;
+void sgen_pin_stats_print_class_stats (void) MONO_INTERNAL;
 
 void sgen_sort_addresses (void **array, size_t size) MONO_INTERNAL;
 void sgen_add_to_global_remset (gpointer ptr, gpointer obj) MONO_INTERNAL;
@@ -1118,8 +1119,6 @@ extern NurseryClearPolicy nursery_clear_policy;
 extern gboolean sgen_try_free_some_memory;
 
 extern LOCK_DECLARE (gc_mutex);
-
-extern int do_pin_stats;
 
 /* Nursery helpers. */
 
