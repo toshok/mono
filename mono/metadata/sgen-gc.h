@@ -1163,6 +1163,9 @@ void sgen_check_for_xdomain_refs (void) MONO_INTERNAL;
 
 void mono_gc_scan_for_specific_ref (MonoObject *key, gboolean precise) MONO_INTERNAL;
 
+void sgen_debug_enable_heap_dump (const char *filename) MONO_INTERNAL;
+void sgen_debug_dump_heap (const char *type, int num, const char *reason) MONO_INTERNAL;
+
 /* Write barrier support */
 
 /*
