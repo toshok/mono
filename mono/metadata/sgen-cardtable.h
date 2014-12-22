@@ -24,6 +24,9 @@
 #ifndef __MONO_SGEN_CARD_TABLE_INLINES_H__
 #define __MONO_SGEN_CARD_TABLE_INLINES_H__
 
+/*WARNING: This function returns the number of cards regardless of overflow in case of overlapping cards.*/
+mword sgen_card_table_number_of_cards_in_range (mword address, mword size) MONO_INTERNAL;
+
 void sgen_card_table_reset_region (mword start, mword end) MONO_INTERNAL;
 void* sgen_card_table_align_pointer (void *ptr) MONO_INTERNAL;
 void sgen_card_table_mark_range (mword address, mword size) MONO_INTERNAL;
