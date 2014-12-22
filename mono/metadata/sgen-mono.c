@@ -1218,7 +1218,7 @@ sgen_client_cardtable_scan_object (char *obj, mword block_obj_size, guint8 *card
 		guint8 *card_data, *card_base;
 		guint8 *card_data_end;
 		char *obj_start = sgen_card_table_align_pointer (obj);
-		mword obj_size = sgen_par_object_get_size (vt, (MonoObject*)obj);
+		mword obj_size = sgen_client_par_object_get_size (vt, (MonoObject*)obj);
 		char *obj_end = obj + obj_size;
 		size_t card_count;
 		size_t extra_idx = 0;
