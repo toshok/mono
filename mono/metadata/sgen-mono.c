@@ -34,6 +34,12 @@
 /* If set, check that there are no references to the domain left at domain unload */
 gboolean sgen_mono_xdomain_checks = FALSE;
 
+#define ALIGN_TO(val,align) ((((guint64)val) + ((align) - 1)) & ~((align) - 1))
+
+/*
+ * Write barriers
+ */
+
 static gboolean
 ptr_on_stack (void *ptr)
 {
@@ -120,7 +126,9 @@ mono_gc_wbarrier_object_copy (MonoObject* obj, MonoObject *src)
 	sgen_get_remset ()->wbarrier_object_copy (obj, src);
 }
 
-#define ALIGN_TO(val,align) ((((guint64)val) + ((align) - 1)) & ~((align) - 1))
+/*
+ * Dummy filler objects
+ */
 
 /* Vtable of the objects used to fill out nursery fragments before a collection */
 static MonoVTable *array_fill_vtable;
@@ -173,6 +181,10 @@ sgen_client_array_fill_range (char *start, size_t size)
 	return TRUE;
 }
 
+/*
+ * Finalization
+ */
+
 static MonoGCFinalizerCallbacks fin_callbacks;
 
 guint
@@ -220,6 +232,10 @@ mono_gc_register_finalizer_callbacks (MonoGCFinalizerCallbacks *callbacks)
 
 	fin_callbacks = *callbacks;
 }
+
+/*
+ * Ephemerons
+ */
 
 typedef struct _EphemeronLinkNode EphemeronLinkNode;
 
@@ -404,6 +420,10 @@ mono_gc_ephemeron_array_add (MonoObject *obj)
 	return TRUE;
 }
 
+/*
+ * Appdomain handling
+ */
+
 static gboolean
 need_remove_object_for_domain (char *start, MonoDomain *domain)
 {
@@ -574,6 +594,10 @@ mono_gc_clear_domain (MonoDomain * domain)
 
 	UNLOCK_GC;
 }
+
+/*
+ * Managed allocator
+ */
 
 static MonoMethod* alloc_method_cache [ATYPE_NUM];
 static gboolean use_managed_allocator = TRUE;
@@ -1106,6 +1130,10 @@ sgen_has_managed_allocator (void)
 	return FALSE;
 }
 
+/*
+ * Debugging
+ */
+
 const char*
 sgen_client_description_for_internal_mem_type (int type)
 {
@@ -1124,6 +1152,10 @@ sgen_client_pre_collection_checks (void)
 		sgen_check_for_xdomain_refs ();
 	}
 }
+
+/*
+ * Initialization
+ */
 
 void
 sgen_client_init (void)
