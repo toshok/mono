@@ -1319,6 +1319,125 @@ LOOP_HEAD:
 }
 
 /*
+ * Array and string allocation
+ */
+
+void*
+mono_gc_alloc_vector (MonoVTable *vtable, size_t size, uintptr_t max_length)
+{
+	MonoArray *arr;
+	TLAB_ACCESS_INIT;
+
+	if (!SGEN_CAN_ALIGN_UP (size))
+		return NULL;
+
+#ifndef DISABLE_CRITICAL_REGION
+	ENTER_CRITICAL_REGION;
+	arr = sgen_try_alloc_obj_nolock (vtable, size);
+	if (arr) {
+		/*This doesn't require fencing since EXIT_CRITICAL_REGION already does it for us*/
+		arr->max_length = (mono_array_size_t)max_length;
+		EXIT_CRITICAL_REGION;
+		return arr;
+	}
+	EXIT_CRITICAL_REGION;
+#endif
+
+	LOCK_GC;
+
+	arr = sgen_alloc_obj_nolock (vtable, size);
+	if (G_UNLIKELY (!arr)) {
+		UNLOCK_GC;
+		return mono_gc_out_of_memory (size);
+	}
+
+	arr->max_length = (mono_array_size_t)max_length;
+
+	UNLOCK_GC;
+
+	return arr;
+}
+
+void*
+mono_gc_alloc_array (MonoVTable *vtable, size_t size, uintptr_t max_length, uintptr_t bounds_size)
+{
+	MonoArray *arr;
+	MonoArrayBounds *bounds;
+	TLAB_ACCESS_INIT;
+
+	if (!SGEN_CAN_ALIGN_UP (size))
+		return NULL;
+
+#ifndef DISABLE_CRITICAL_REGION
+	ENTER_CRITICAL_REGION;
+	arr = sgen_try_alloc_obj_nolock (vtable, size);
+	if (arr) {
+		/*This doesn't require fencing since EXIT_CRITICAL_REGION already does it for us*/
+		arr->max_length = (mono_array_size_t)max_length;
+
+		bounds = (MonoArrayBounds*)((char*)arr + size - bounds_size);
+		arr->bounds = bounds;
+		EXIT_CRITICAL_REGION;
+		return arr;
+	}
+	EXIT_CRITICAL_REGION;
+#endif
+
+	LOCK_GC;
+
+	arr = sgen_alloc_obj_nolock (vtable, size);
+	if (G_UNLIKELY (!arr)) {
+		UNLOCK_GC;
+		return mono_gc_out_of_memory (size);
+	}
+
+	arr->max_length = (mono_array_size_t)max_length;
+
+	bounds = (MonoArrayBounds*)((char*)arr + size - bounds_size);
+	arr->bounds = bounds;
+
+	UNLOCK_GC;
+
+	return arr;
+}
+
+void*
+mono_gc_alloc_string (MonoVTable *vtable, size_t size, gint32 len)
+{
+	MonoString *str;
+	TLAB_ACCESS_INIT;
+
+	if (!SGEN_CAN_ALIGN_UP (size))
+		return NULL;
+
+#ifndef DISABLE_CRITICAL_REGION
+	ENTER_CRITICAL_REGION;
+	str = sgen_try_alloc_obj_nolock (vtable, size);
+	if (str) {
+		/*This doesn't require fencing since EXIT_CRITICAL_REGION already does it for us*/
+		str->length = len;
+		EXIT_CRITICAL_REGION;
+		return str;
+	}
+	EXIT_CRITICAL_REGION;
+#endif
+
+	LOCK_GC;
+
+	str = sgen_alloc_obj_nolock (vtable, size);
+	if (G_UNLIKELY (!str)) {
+		UNLOCK_GC;
+		return mono_gc_out_of_memory (size);
+	}
+
+	str->length = len;
+
+	UNLOCK_GC;
+
+	return str;
+}
+
+/*
  * Debugging
  */
 
