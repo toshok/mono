@@ -803,8 +803,6 @@ sgen_safe_object_get_size_unaligned (MonoObject *obj)
        return sgen_client_slow_object_get_size ((MonoVTable*)SGEN_LOAD_VTABLE (obj), obj);
 }
 
-const char* sgen_safe_name (void* obj) MONO_INTERNAL;
-
 gboolean sgen_object_is_live (void *obj) MONO_INTERNAL;
 
 void  sgen_init_fin_weak_hash (void) MONO_INTERNAL;

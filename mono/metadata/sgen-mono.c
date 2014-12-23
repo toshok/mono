@@ -1498,6 +1498,13 @@ sgen_client_pre_collection_checks (void)
 	}
 }
 
+const char*
+sgen_client_object_safe_name (MonoObject *obj)
+{
+	MonoVTable *vt = (MonoVTable*)SGEN_LOAD_VTABLE (obj);
+	return vt->klass->name;
+}
+
 /*
  * Initialization
  */
