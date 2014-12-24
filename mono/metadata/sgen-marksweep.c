@@ -497,7 +497,7 @@ unlink_slot_from_free_list_uncontested (MSBlockInfo **free_blocks, int size_inde
 }
 
 static void*
-alloc_obj (MonoVTable *vtable, size_t size, gboolean pinned, gboolean has_references)
+alloc_obj (GCVTable *vtable, size_t size, gboolean pinned, gboolean has_references)
 {
 	int size_index = MS_BLOCK_OBJ_SIZE_INDEX (size);
 	MSBlockInfo **free_blocks = FREE_BLOCKS (pinned, has_references);
@@ -510,13 +510,13 @@ alloc_obj (MonoVTable *vtable, size_t size, gboolean pinned, gboolean has_refere
 
 	obj = unlink_slot_from_free_list_uncontested (free_blocks, size_index);
 
-	*(MonoVTable**)obj = vtable;
+	*(GCVTable**)obj = vtable;
 
 	return obj;
 }
 
 static void*
-major_alloc_object (MonoVTable *vtable, size_t size, gboolean has_references)
+major_alloc_object (GCVTable *vtable, size_t size, gboolean has_references)
 {
 	return alloc_obj (vtable, size, FALSE, has_references);
 }
@@ -560,7 +560,7 @@ major_free_non_pinned_object (char *obj, size_t size)
 
 /* size is a multiple of SGEN_ALLOC_ALIGN */
 static void*
-major_alloc_small_pinned_obj (MonoVTable *vtable, size_t size, gboolean has_references)
+major_alloc_small_pinned_obj (GCVTable *vtable, size_t size, gboolean has_references)
 {
 	void *res;
 
@@ -585,7 +585,7 @@ free_pinned_object (char *obj, size_t size)
  * size is already rounded up and we hold the GC lock.
  */
 static void*
-major_alloc_degraded (MonoVTable *vtable, size_t size)
+major_alloc_degraded (GCVTable *vtable, size_t size)
 {
 	void *obj;
 	size_t old_num_sections;
@@ -617,7 +617,7 @@ major_is_object_live (char *obj)
 	if (sgen_ptr_in_nursery (obj))
 		return FALSE;
 
-	objsize = SGEN_ALIGN_UP (sgen_safe_object_get_size ((MonoObject*)obj));
+	objsize = SGEN_ALIGN_UP (sgen_safe_object_get_size ((GCObject*)obj));
 
 	/* LOS */
 	if (objsize > SGEN_MAX_SMALL_OBJ_SIZE)
@@ -711,7 +711,7 @@ major_is_valid_object (char *object)
 }
 
 
-static MonoVTable*
+static GCVTable*
 major_describe_pointer (char *ptr)
 {
 	MSBlockInfo *block;
@@ -720,7 +720,7 @@ major_describe_pointer (char *ptr)
 		int idx;
 		char *obj;
 		gboolean live;
-		MonoVTable *vtable;
+		GCVTable *vtable;
 		int w, b;
 		gboolean marked;
 
@@ -733,7 +733,7 @@ major_describe_pointer (char *ptr)
 		idx = MS_BLOCK_OBJ_INDEX (ptr, block);
 		obj = (char*)MS_BLOCK_OBJ (block, idx);
 		live = MS_OBJ_ALLOCED (obj, block);
-		vtable = live ? (MonoVTable*)SGEN_LOAD_VTABLE (obj) : NULL;
+		vtable = live ? (GCVTable*)SGEN_LOAD_VTABLE (obj) : NULL;
 
 		MS_CALC_MARK_BIT (w, b, obj);
 		marked = MS_MARK_BIT (block, w, b);
@@ -825,7 +825,7 @@ major_dump_heap (FILE *heap_dump_file)
 			MS_SET_MARK_BIT ((block), __word, __bit);	\
 			if (sgen_gc_descr_has_references (desc))			\
 				GRAY_OBJECT_ENQUEUE ((queue), (obj), (desc)); \
-			binary_protocol_mark ((obj), (gpointer)LOAD_VTABLE ((obj)), sgen_safe_object_get_size ((MonoObject*)(obj))); \
+			binary_protocol_mark ((obj), (gpointer)LOAD_VTABLE ((obj)), sgen_safe_object_get_size ((GCObject*)(obj))); \
 			INC_NUM_MAJOR_OBJECTS_MARKED ();		\
 		}							\
 	} while (0)
@@ -837,7 +837,7 @@ major_dump_heap (FILE *heap_dump_file)
 			MS_SET_MARK_BIT ((block), __word, __bit);	\
 			if (sgen_gc_descr_has_references (desc))			\
 				GRAY_OBJECT_ENQUEUE ((queue), (obj), (desc)); \
-			binary_protocol_mark ((obj), (gpointer)LOAD_VTABLE ((obj)), sgen_safe_object_get_size ((MonoObject*)(obj))); \
+			binary_protocol_mark ((obj), (gpointer)LOAD_VTABLE ((obj)), sgen_safe_object_get_size ((GCObject*)(obj))); \
 			INC_NUM_MAJOR_OBJECTS_MARKED ();		\
 		}							\
 	} while (0)
@@ -868,7 +868,7 @@ major_copy_or_mark_object_with_evacuation_concurrent (void **ptr, void *obj, Sge
 	if (!sgen_ptr_in_nursery (obj)) {
 		mword objsize;
 
-		objsize = SGEN_ALIGN_UP (sgen_safe_object_get_size ((MonoObject*)obj));
+		objsize = SGEN_ALIGN_UP (sgen_safe_object_get_size ((GCObject*)obj));
 
 		if (objsize <= SGEN_MAX_SMALL_OBJ_SIZE) {
 			MSBlockInfo *block = MS_BLOCK_FOR_OBJ (obj);
@@ -879,8 +879,9 @@ major_copy_or_mark_object_with_evacuation_concurrent (void **ptr, void *obj, Sge
 
 #ifdef ENABLE_DTRACE
 			if (G_UNLIKELY (MONO_GC_OBJ_PINNED_ENABLED ())) {
-				MonoVTable *vt = (MonoVTable*)SGEN_LOAD_VTABLE (obj);
-				MONO_GC_OBJ_PINNED ((mword)obj, sgen_safe_object_get_size (obj), vt->klass->name_space, vt->klass->name, GENERATION_OLD);
+				GCVTable *vt = (GCVTable*)SGEN_LOAD_VTABLE (obj);
+				MONO_GC_OBJ_PINNED ((mword)obj, sgen_safe_object_get_size (obj),
+						sgen_client_vtable_get_namespace (vt), sgen_client_vtable_get_name (vt), GENERATION_OLD);
 			}
 #endif
 
@@ -1231,9 +1232,9 @@ static int count_nonpinned_nonref;
 static void
 count_nonpinned_callback (char *obj, size_t size, void *data)
 {
-	MonoVTable *vtable = (MonoVTable*)LOAD_VTABLE (obj);
+	GCVTable *vtable = (GCVTable*)LOAD_VTABLE (obj);
 
-	if (vtable->klass->has_references)
+	if (sgen_client_vtable_has_references (vtable))
 		++count_nonpinned_ref;
 	else
 		++count_nonpinned_nonref;
@@ -1242,9 +1243,9 @@ count_nonpinned_callback (char *obj, size_t size, void *data)
 static void
 count_pinned_callback (char *obj, size_t size, void *data)
 {
-	MonoVTable *vtable = (MonoVTable*)LOAD_VTABLE (obj);
+	GCVTable *vtable = (GCVTable*)LOAD_VTABLE (obj);
 
-	if (vtable->klass->has_references)
+	if (sgen_client_vtable_has_references (vtable))
 		++count_pinned_ref;
 	else
 		++count_pinned_nonref;
@@ -1274,7 +1275,7 @@ count_ref_nonref_objs (void)
 static int
 ms_calculate_block_obj_sizes (double factor, int *arr)
 {
-	double target_size = sizeof (MonoObject);
+	double target_size = SGEN_CLIENT_MINIMUM_OBJECT_SIZE;
 	int num_sizes = 0;
 	int last_size = 0;
 

@@ -37,6 +37,7 @@
 #include "metadata/sgen-protocol.h"
 #include "metadata/sgen-cardtable.h"
 #include "metadata/sgen-memory-governor.h"
+#include "metadata/sgen-client.h"
 #include "utils/mono-mmap.h"
 #include "utils/mono-compiler.h"
 
@@ -328,7 +329,7 @@ sgen_los_free_object (LOSObject *obj)
  * and we avoid the memcpy overhead.
  */
 void*
-sgen_los_alloc_large_inner (MonoVTable *vtable, size_t size)
+sgen_los_alloc_large_inner (GCVTable *vtable, size_t size)
 {
 	LOSObject *obj = NULL;
 	void **vtslot;
@@ -389,7 +390,7 @@ sgen_los_alloc_large_inner (MonoVTable *vtable, size_t size)
 	los_object_list = obj;
 	los_memory_usage += size;
 	los_num_objects++;
-	SGEN_LOG (4, "Allocated large object %p, vtable: %p (%s), size: %zd", obj->data, vtable, vtable->klass->name, size);
+	SGEN_LOG (4, "Allocated large object %p, vtable: %p (%s), size: %zd", obj->data, vtable, sgen_client_vtable_get_name (vtable), size);
 	binary_protocol_alloc (obj->data, vtable, size);
 
 #ifdef LOS_CONSISTENCY_CHECK
@@ -503,7 +504,7 @@ mono_sgen_los_describe_pointer (char *ptr)
 	LOSObject *obj;
 
 	for (obj = los_object_list; obj; obj = obj->next) {
-		MonoVTable *vtable;
+		GCVTable *vtable;
 		const char *los_kind;
 		mword size;
 		gboolean pinned;
@@ -519,7 +520,7 @@ mono_sgen_los_describe_pointer (char *ptr)
 		else
 			los_kind = "los-ptr";
 
-		vtable = (MonoVTable*)SGEN_LOAD_VTABLE (obj->data);
+		vtable = (GCVTable*)SGEN_LOAD_VTABLE (obj->data);
 
 		if (obj->data == ptr) {
 			SGEN_LOG (0, "%s (size %d pin %d)\n", los_kind, (int)size, pinned ? 1 : 0);
@@ -538,7 +539,7 @@ sgen_los_iterate_live_block_ranges (sgen_cardtable_block_callback callback)
 {
 	LOSObject *obj;
 	for (obj = los_object_list; obj; obj = obj->next) {
-		MonoVTable *vt = (MonoVTable*)SGEN_LOAD_VTABLE (obj->data);
+		GCVTable *vt = (GCVTable*)SGEN_LOAD_VTABLE (obj->data);
 		if (SGEN_VTABLE_HAS_REFERENCES (vt))
 			callback ((mword)obj->data, (mword)obj->size);
 	}
@@ -627,7 +628,7 @@ sgen_los_pin_object (char *data)
 {
 	LOSObject *obj = sgen_los_header_for_object (data);
 	obj->size = obj->size | 1;
-	binary_protocol_pin (data, (gpointer)SGEN_LOAD_VTABLE (data), sgen_safe_object_get_size ((MonoObject*)data));
+	binary_protocol_pin (data, (gpointer)SGEN_LOAD_VTABLE (data), sgen_safe_object_get_size ((GCObject*)data));
 }
 
 void
