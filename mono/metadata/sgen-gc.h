@@ -294,18 +294,6 @@ sgen_get_nursery_end (void)
 	return sgen_nursery_end;
 }
 
-/* Structure that corresponds to a GCVTable: desc is a mword so requires
- * no cast from a pointer to an integer
- */
-typedef struct {
-	MonoClass *klass;
-	mword desc;
-} GCVTable;
-
-typedef struct {
-	GCVTable *vtable;
-} GCObject;
-
 /*
  * We use the lowest three bits in the vtable pointer of objects to tag whether they're
  * forwarded, pinned, and/or cemented.  These are the valid states:
@@ -366,8 +354,6 @@ typedef struct {
  * Since we set bits in the vtable, use the macro to load it from the pointer to
  * an object that is potentially pinned.
  */
-/* FIXME: This should return a GCVTable* */
-#define SGEN_LOAD_VTABLE_UNCHECKED(obj)	((void*)(((GCObject*)(obj))->vtable))
 #define SGEN_LOAD_VTABLE(obj)		SGEN_POINTER_UNTAG_ALL (SGEN_LOAD_VTABLE_UNCHECKED ((obj)))
 
 /*
@@ -467,6 +453,8 @@ enum {
 #endif
 
 void sgen_init_internal_allocator (void) MONO_INTERNAL;
+
+#include "metadata/sgen-client-mono.h"
 
 /* FIXME: get rid of this in favor of pointer queues! */
 typedef struct _ObjectList ObjectList;
@@ -761,12 +749,6 @@ typedef struct _SgenRemeberedSet {
 SgenRemeberedSet *sgen_get_remset (void) MONO_INTERNAL;
 
 static inline mword
-sgen_vtable_get_descriptor (GCVTable *vtable)
-{
-	return vtable->desc;
-}
-
-static inline mword
 sgen_obj_get_descriptor (char *obj)
 {
 	GCVTable *vtable = SGEN_LOAD_VTABLE_UNCHECKED (obj);
@@ -780,8 +762,6 @@ sgen_obj_get_descriptor_safe (char *obj)
 	GCVTable *vtable = (GCVTable*)SGEN_LOAD_VTABLE (obj);
 	return sgen_vtable_get_descriptor (vtable);
 }
-
-#include "metadata/sgen-client-mono.h"
 
 static inline mword
 sgen_safe_object_get_size (GCObject *obj)
