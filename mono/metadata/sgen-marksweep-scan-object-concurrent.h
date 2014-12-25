@@ -82,8 +82,8 @@ major_scan_vtype_concurrent (char *start, mword desc, SgenGrayQueue *queue BINAR
 	//add_scanned_object (start);
 #endif
 
-	/* The descriptors include info about the MonoObject header as well */
-	start -= sizeof (MonoObject);
+	/* The descriptors include info about the object header as well */
+	start -= SGEN_CLIENT_OBJECT_HEADER_SIZE;
 
 #define SCAN_OBJECT_NOVTABLE
 #define SCAN_OBJECT_PROTOCOL
