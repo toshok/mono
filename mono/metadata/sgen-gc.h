@@ -957,6 +957,12 @@ char* sgen_alloc_for_promotion (char *obj, size_t objsize, gboolean has_referenc
 void* sgen_alloc_obj_nolock (GCVTable *vtable, size_t size) MONO_INTERNAL;
 void* sgen_try_alloc_obj_nolock (GCVTable *vtable, size_t size) MONO_INTERNAL;
 
+/* Threads */
+
+void* sgen_thread_register (SgenThreadInfo* info, void *addr) MONO_INTERNAL;
+void sgen_thread_unregister (SgenThreadInfo *p) MONO_INTERNAL;
+void sgen_thread_attach (SgenThreadInfo *info) MONO_INTERNAL;
+
 /* Finalization/ephemeron support */
 
 static inline gboolean
