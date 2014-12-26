@@ -2046,6 +2046,12 @@ sgen_client_vtable_get_name (GCVTable *gc_vtable)
 	return vt->klass->name;
 }
 
+FILE*
+mono_gc_get_logfile (void)
+{
+	return stderr;
+}
+
 /*
  * Initialization
  */

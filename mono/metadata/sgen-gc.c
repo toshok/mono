@@ -208,7 +208,6 @@
 #include "utils/mono-time.h"
 #include "utils/mono-semaphore.h"
 #include "utils/mono-counters.h"
-#include "utils/mono-proclib.h"
 #include "utils/mono-memory-model.h"
 #include "utils/dtrace.h"
 
@@ -1170,12 +1169,6 @@ gboolean
 mono_gc_precise_stack_mark_enabled (void)
 {
 	return !conservative_stack_mark;
-}
-
-FILE *
-mono_gc_get_logfile (void)
-{
-	return gc_debug_file;
 }
 
 static void
@@ -3484,7 +3477,6 @@ mono_gc_base_init (void)
 	LOCK_INIT (gc_mutex);
 
 	pagesize = mono_pagesize ();
-	gc_debug_file = stderr;
 
 	LOCK_INIT (sgen_interruption_mutex);
 
@@ -3765,19 +3757,7 @@ mono_gc_base_init (void)
 			char *opt = *ptr;
 			if (!strcmp (opt, ""))
 				continue;
-			if (opt [0] >= '0' && opt [0] <= '9') {
-				gc_debug_level = atoi (opt);
-				opt++;
-				if (opt [0] == ':')
-					opt++;
-				if (opt [0]) {
-					char *rf = g_strdup_printf ("%s.%d", opt, mono_process_current_pid ());
-					gc_debug_file = fopen (rf, "wb");
-					if (!gc_debug_file)
-						gc_debug_file = stderr;
-					g_free (rf);
-				}
-			} else if (!strcmp (opt, "print-allowance")) {
+			if (!strcmp (opt, "print-allowance")) {
 				debug_print_allowance = TRUE;
 			} else if (!strcmp (opt, "print-pinning")) {
 				sgen_pin_stats_enable ();

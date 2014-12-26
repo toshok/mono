@@ -725,8 +725,8 @@ major_describe_pointer (char *ptr)
 		if ((MS_BLOCK_FOR_BLOCK_INFO (block) > ptr) || ((MS_BLOCK_FOR_BLOCK_INFO (block) + MS_BLOCK_SIZE) <= ptr))
 			continue;
 
-		SGEN_LOG (0, "major-ptr (block %p sz %d pin %d ref %d)\n",
-			MS_BLOCK_FOR_BLOCK_INFO (block), block->obj_size, block->pinned, block->has_references);
+		fprintf (stderr, "major-ptr (block %p sz %d pin %d ref %d)\n",
+				MS_BLOCK_FOR_BLOCK_INFO (block), block->obj_size, block->pinned, block->has_references);
 
 		idx = MS_BLOCK_OBJ_INDEX (ptr, block);
 		obj = (char*)MS_BLOCK_OBJ (block, idx);
@@ -737,19 +737,19 @@ major_describe_pointer (char *ptr)
 		marked = MS_MARK_BIT (block, w, b);
 
 		if (obj == ptr) {
-			SGEN_LOG (0, "\t(");
+			fprintf (stderr, "\t(");
 			if (live)
-				SGEN_LOG (0, "object");
+				fprintf (stderr, "object");
 			else
-				SGEN_LOG (0, "dead-object");
+				fprintf (stderr, "dead-object");
 		} else {
 			if (live)
-				SGEN_LOG (0, "interior-ptr offset %td", ptr - obj);
+				fprintf (stderr, "interior-ptr offset %td", ptr - obj);
 			else
-				SGEN_LOG (0, "dead-interior-ptr offset %td", ptr - obj);
+				fprintf (stderr, "dead-interior-ptr offset %td", ptr - obj);
 		}
 
-		SGEN_LOG (0, " marked %d)\n", marked ? 1 : 0);
+		fprintf (stderr, " marked %d)\n", marked ? 1 : 0);
 
 		return vtable;
 	} END_FOREACH_BLOCK;

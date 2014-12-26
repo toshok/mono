@@ -198,14 +198,6 @@ extern guint64 stat_objects_copied_major;
 } } while (0)
 
 
-#define SGEN_LOG(level, format, ...) do {      \
-	if (G_UNLIKELY ((level) <= SGEN_MAX_DEBUG_LEVEL && (level) <= gc_debug_level)) {	\
-		mono_gc_printf (gc_debug_file, format, ##__VA_ARGS__);	\
-} } while (0)
-
-extern int gc_debug_level;
-extern FILE* gc_debug_file;
-
 extern int current_collection_generation;
 
 extern unsigned int sgen_global_stop_count;

@@ -217,7 +217,7 @@ is_major_or_los_object_marked (char *obj)
 	if (*(ptr) && !sgen_ptr_in_nursery ((char*)*(ptr)) && !is_major_or_los_object_marked ((char*)*(ptr))) { \
 		if (!sgen_get_remset ()->find_address_with_cards (start, cards, (char*)(ptr))) { \
 			GCVTable *__vt = SGEN_LOAD_VTABLE ((obj));	\
-			SGEN_LOG (0, "major->major reference %p at offset %td in object %p (%s.%s) not found in remsets.", *(ptr), (char*)(ptr) - (char*)(obj), (obj), sgen_client_vtable_get_namespace (__vt), sgen_client_vtable_get_name (__vt)); \
+			fprintf (stderr, "major->major reference %p at offset %td in object %p (%s.%s) not found in remsets.", *(ptr), (char*)(ptr) - (char*)(obj), (obj), sgen_client_vtable_get_namespace (__vt), sgen_client_vtable_get_name (__vt)); \
 			binary_protocol_missing_remset ((obj), __vt, (int) ((char*)(ptr) - (char*)(obj)), *(ptr), (gpointer)LOAD_VTABLE(*(ptr)), object_is_pinned (*(ptr))); \
 			missing_remsets = TRUE;				\
 		}																\
@@ -368,14 +368,14 @@ describe_nursery_ptr (char *ptr, gboolean need_setup)
 	}
 
 	if (i >= valid_nursery_object_count || valid_nursery_objects [i] + safe_object_get_size ((GCObject *)valid_nursery_objects [i]) < ptr) {
-		SGEN_LOG (0, "nursery-ptr (unalloc'd-memory)\n");
+		fprintf (stderr, "nursery-ptr (unalloc'd-memory)\n");
 		return NULL;
 	} else {
 		char *obj = valid_nursery_objects [i];
 		if (obj == ptr)
-			SGEN_LOG (0, "nursery-ptr\n");
+			fprintf (stderr, "nursery-ptr\n");
 		else
-			SGEN_LOG (0, "nursery-ptr (interior-ptr offset %td)\n", ptr - obj);
+			fprintf (stderr, "nursery-ptr (interior-ptr offset %td)\n", ptr - obj);
 		return obj;
 	}
 }
@@ -400,9 +400,9 @@ bad_pointer_spew (char *obj, char **slot)
 	char *ptr = *slot;
 	MonoVTable *vtable = (MonoVTable*)LOAD_VTABLE (obj);
 
-	SGEN_LOG (0, "Invalid object pointer %p at offset %td in object %p (%s.%s):", ptr,
-		(char*)slot - obj,
-		obj, vtable->klass->name_space, vtable->klass->name);
+	fprintf (stderr, "Invalid object pointer %p at offset %td in object %p (%s.%s):", ptr,
+			(char*)slot - obj,
+			obj, vtable->klass->name_space, vtable->klass->name);
 	describe_pointer (ptr, FALSE);
 	broken_heap = TRUE;
 }
@@ -413,9 +413,9 @@ missing_remset_spew (char *obj, char **slot)
 	char *ptr = *slot;
 	MonoVTable *vtable = (MonoVTable*)LOAD_VTABLE (obj);
 
-	SGEN_LOG (0, "Oldspace->newspace reference %p at offset %td in object %p (%s.%s) not found in remsets.",
- 		ptr, (char*)slot - obj, obj, 
-		vtable->klass->name_space, vtable->klass->name);
+	fprintf (stderr, "Oldspace->newspace reference %p at offset %td in object %p (%s.%s) not found in remsets.",
+			ptr, (char*)slot - obj, obj, 
+			vtable->klass->name_space, vtable->klass->name);
 
 	broken_heap = TRUE;
 }
@@ -498,9 +498,8 @@ find_pinning_ref_from_thread (char *obj, size_t size)
 		if (info->skip)
 			continue;
 		while (start < (char**)info->stack_end) {
-			if (*start >= obj && *start < endobj) {
-				SGEN_LOG (0, "Object %p referenced in thread %p (id %p) at %p, stack: %p-%p", obj, info, (gpointer)mono_thread_info_get_tid (info), start, info->stack_start, info->stack_end);
-			}
+			if (*start >= obj && *start < endobj)
+				fprintf (stderr, "Object %p referenced in thread %p (id %p) at %p, stack: %p-%p", obj, info, (gpointer)mono_thread_info_get_tid (info), start, info->stack_start, info->stack_end);
 			start++;
 		}
 
@@ -512,7 +511,7 @@ find_pinning_ref_from_thread (char *obj, size_t size)
 #endif
 
 			if (w >= (mword)obj && w < (mword)obj + size)
-				SGEN_LOG (0, "Object %p referenced in saved reg %d of thread %p (id %p)", obj, j, info, (gpointer)mono_thread_info_get_tid (info));
+				fprintf (stderr, "Object %p referenced in saved reg %d of thread %p (id %p)", obj, j, info, (gpointer)mono_thread_info_get_tid (info));
 		} END_FOREACH_THREAD
 	}
 }
@@ -531,9 +530,8 @@ find_pinning_reference (char *obj, size_t size)
 		/* if desc is non-null it has precise info */
 		if (!root->root_desc) {
 			while (start < (char**)root->end_root) {
-				if (*start >= obj && *start < endobj) {
-					SGEN_LOG (0, "Object %p referenced in pinned roots %p-%p\n", obj, start, root->end_root);
-				}
+				if (*start >= obj && *start < endobj)
+					fprintf (stderr, "Object %p referenced in pinned roots %p-%p\n", obj, start, root->end_root);
 				start++;
 			}
 		}
@@ -618,7 +616,7 @@ verify_scan_starts (char *start, char *end)
 	for (i = 0; i < nursery_section->num_scan_start; ++i) {
 		char *addr = nursery_section->scan_starts [i];
 		if (addr > start && addr < end)
-			SGEN_LOG (0, "NFC-BAD SCAN START [%zu] %p for obj [%p %p]", i, addr, start, end);
+			fprintf (stderr, "NFC-BAD SCAN START [%zu] %p for obj [%p %p]", i, addr, start, end);
 	}
 }
 
@@ -628,7 +626,7 @@ sgen_debug_verify_nursery (gboolean do_dump_nursery_content)
 	char *start, *end, *cur, *hole_start;
 
 	if (nursery_canaries_enabled ())
-		SGEN_LOG (0, "Checking nursery canaries...");
+		fprintf (stderr, "Checking nursery canaries...");
 
 	/*This cleans up unused fragments */
 	sgen_nursery_allocator_prepare_for_pinning ();
@@ -645,17 +643,17 @@ sgen_debug_verify_nursery (gboolean do_dump_nursery_content)
 		}
 
 		if (object_is_forwarded (cur))
-			SGEN_LOG (0, "FORWARDED OBJ %p", cur);
+			fprintf (stderr, "FORWARDED OBJ %p", cur);
 		else if (object_is_pinned (cur))
-			SGEN_LOG (0, "PINNED OBJ %p", cur);
+			fprintf (stderr, "PINNED OBJ %p", cur);
 
 		ss = safe_object_get_size ((GCObject*)cur);
 		size = SGEN_ALIGN_UP (ss);
 		verify_scan_starts (cur, cur + size);
 		if (do_dump_nursery_content) {
 			if (cur > hole_start)
-				SGEN_LOG (0, "HOLE [%p %p %d]", hole_start, cur, (int)(cur - hole_start));
-			SGEN_LOG (0, "OBJ  [%p %p %d %d %s %d]", cur, cur + size, (int)size, (int)ss,
+				fprintf (stderr, "HOLE [%p %p %d]", hole_start, cur, (int)(cur - hole_start));
+			fprintf (stderr, "OBJ  [%p %p %d %d %s %d]", cur, cur + size, (int)size, (int)ss,
 					sgen_client_object_safe_name ((GCObject*)cur),
 					(gpointer)LOAD_VTABLE (cur) == sgen_client_get_array_fill_vtable ());
 		}
