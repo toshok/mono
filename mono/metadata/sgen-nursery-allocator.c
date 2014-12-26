@@ -622,7 +622,6 @@ sgen_clear_allocator_fragments (SgenFragmentAllocator *allocator)
 	SgenFragment *frag;
 
 	for (frag = unmask (allocator->alloc_head); frag; frag = unmask (frag->next)) {
-		SGEN_LOG (4, "Clear nursery frag %p-%p", frag->fragment_next, frag->fragment_end);
 		sgen_clear_range (frag->fragment_next, frag->fragment_end);
 #ifdef NALLOC_DEBUG
 		add_alloc_record (frag->fragment_next, frag->fragment_end - frag->fragment_next, CLEAR_NURSERY_FRAGS);
@@ -679,7 +678,6 @@ static mword fragment_total = 0;
 static void
 add_nursery_frag (SgenFragmentAllocator *allocator, size_t frag_size, char* frag_start, char* frag_end)
 {
-	SGEN_LOG (4, "Found empty fragment: %p-%p, size: %zd", frag_start, frag_end, frag_size);
 	binary_protocol_empty (frag_start, frag_size);
 	MONO_GC_NURSERY_SWEPT ((mword)frag_start, frag_end - frag_start);
 	/* Not worth dealing with smaller fragments: need to tune */
@@ -805,13 +803,6 @@ sgen_build_nursery_fragments (GCMemSection *nursery_section, SgenGrayQueue *unpi
 	/*The collector might want to do something with the final nursery fragment list.*/
 	sgen_minor_collector.build_fragments_finish (&mutator_allocator);
 
-	if (!unmask (mutator_allocator.alloc_head)) {
-		SGEN_LOG (1, "Nursery fully pinned");
-		for (pin_entry = pin_start; pin_entry < pin_end; ++pin_entry) {
-			void *p = *pin_entry;
-			SGEN_LOG (3, "Bastard pinning obj %p (%s), size: %zd", p, sgen_client_object_safe_name (p), sgen_safe_object_get_size (p));
-		}
-	}
 	return fragment_total;
 }
 
@@ -851,7 +842,6 @@ sgen_nursery_alloc (size_t size)
 {
 	SGEN_ASSERT (1, size >= sizeof (MonoObject) && size <= (SGEN_MAX_SMALL_OBJ_SIZE + CANARY_SIZE), "Invalid nursery object size");
 
-	SGEN_LOG (4, "Searching nursery for size: %zd", size);
 	size = SGEN_ALIGN_UP (size);
 
 	HEAVY_STAT (InterlockedIncrement (&stat_nursery_alloc_requests));
@@ -862,8 +852,6 @@ sgen_nursery_alloc (size_t size)
 void*
 sgen_nursery_alloc_range (size_t desired_size, size_t minimum_size, size_t *out_alloc_size)
 {
-	SGEN_LOG (4, "Searching for byte range desired size: %zd minimum size %zd", desired_size, minimum_size);
-
 	HEAVY_STAT (InterlockedIncrement (&stat_nursery_alloc_range_requests));
 
 	return sgen_fragment_allocator_par_range_alloc (&mutator_allocator, desired_size, minimum_size, out_alloc_size);

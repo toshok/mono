@@ -161,7 +161,6 @@ static gboolean missing_remsets;
 	if (*(ptr) && sgen_ptr_in_nursery ((char*)*(ptr))) { \
 		if (!sgen_get_remset ()->find_address ((char*)(ptr)) && !sgen_cement_lookup (*(ptr))) { \
 			GCVTable *__vt = SGEN_LOAD_VTABLE ((obj));	\
-			SGEN_LOG (0, "Oldspace->newspace reference %p at offset %td in object %p (%s.%s) not found in remsets.", *(ptr), (char*)(ptr) - (char*)(obj), (obj), sgen_client_vtable_get_namespace (__vt), sgen_client_vtable_get_name (__vt)); \
 			binary_protocol_missing_remset ((obj), __vt, (int) ((char*)(ptr) - (char*)(obj)), *(ptr), (gpointer)LOAD_VTABLE(*(ptr)), object_is_pinned (*(ptr))); \
 			if (!object_is_pinned (*(ptr)))								\
 				missing_remsets = TRUE;									\
@@ -178,7 +177,6 @@ check_consistency_callback (char *start, size_t size, void *dummy)
 {
 	MonoVTable *vt = (MonoVTable*)LOAD_VTABLE (start);
 	mword desc = sgen_vtable_get_descriptor ((GCVTable*)vt);
-	SGEN_LOG (8, "Scanning object %p, vtable: %p (%s)", start, vt, vt->klass->name);
 
 #include "sgen-scan-object.h"
 }
@@ -195,14 +193,10 @@ sgen_check_consistency (void)
 
 	missing_remsets = FALSE;
 
-	SGEN_LOG (1, "Begin heap consistency check...");
-
 	// Check that oldspace->newspace pointers are registered with the collector
 	major_collector.iterate_objects (ITERATE_OBJECTS_SWEEP_ALL, (IterateObjectCallbackFunc)check_consistency_callback, NULL);
 
 	sgen_los_iterate_objects ((IterateObjectCallbackFunc)check_consistency_callback, NULL);
-
-	SGEN_LOG (1, "Heap consistency check done.");
 
 	if (!binary_protocol_is_enabled ())
 		g_assert (!missing_remsets);
@@ -237,7 +231,6 @@ check_mod_union_callback (char *start, size_t size, void *dummy)
 	MonoVTable *vt = (MonoVTable*)LOAD_VTABLE (start);
 	mword desc = sgen_vtable_get_descriptor ((GCVTable*)vt);
 	guint8 *cards;
-	SGEN_LOG (8, "Scanning object %p, vtable: %p (%s)", start, vt, vt->klass->name);
 
 	if (!is_major_or_los_object_marked (start))
 		return;

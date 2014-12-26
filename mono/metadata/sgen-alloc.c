@@ -227,7 +227,6 @@ sgen_alloc_obj_nolock (GCVTable *vtable, size_t size)
 			 */
 
 			CANARIFY_ALLOC(p,real_size);
-			SGEN_LOG (6, "Allocated object %p, vtable: %p (%s), size: %zd", p, vtable, sgen_client_vtable_get_name (vtable), size);
 			binary_protocol_alloc (p , vtable, size);
 			if (G_UNLIKELY (MONO_GC_NURSERY_OBJ_ALLOC_ENABLED ()))
 				MONO_GC_NURSERY_OBJ_ALLOC ((mword)p, size, sgen_client_vtable_get_namespace (vtable), sgen_client_vtable_get_name (vtable));
@@ -296,8 +295,6 @@ sgen_alloc_obj_nolock (GCVTable *vtable, size_t size)
 				zero_tlab_if_necessary (p, size);
 			} else {
 				size_t alloc_size = 0;
-				if (TLAB_START)
-					SGEN_LOG (3, "Retire TLAB: %p-%p [%ld]", TLAB_START, TLAB_REAL_END, (long)(TLAB_REAL_END - TLAB_NEXT - size));
 				sgen_nursery_retire_region (p, available_in_tlab);
 
 				p = sgen_nursery_alloc_range (tlab_size, size, &alloc_size);
@@ -330,13 +327,11 @@ sgen_alloc_obj_nolock (GCVTable *vtable, size_t size)
 			sgen_set_nursery_scan_start ((char*)p);
 			/* we just bump tlab_temp_end as well */
 			TLAB_TEMP_END = MIN (TLAB_REAL_END, TLAB_NEXT + SGEN_SCAN_START_SIZE);
-			SGEN_LOG (5, "Expanding local alloc: %p-%p", TLAB_NEXT, TLAB_TEMP_END);
 		}
 		CANARIFY_ALLOC(p,real_size);
 	}
 
 	if (G_LIKELY (p)) {
-		SGEN_LOG (6, "Allocated object %p, vtable: %p (%s), size: %zd", p, vtable, sgen_client_vtable_get_name (vtable), size);
 		binary_protocol_alloc (p, vtable, size);
 		if (G_UNLIKELY (MONO_GC_MAJOR_OBJ_ALLOC_LARGE_ENABLED ()|| MONO_GC_NURSERY_OBJ_ALLOC_ENABLED ())) {
 			if (real_size > SGEN_MAX_SMALL_OBJ_SIZE)
@@ -397,7 +392,6 @@ sgen_try_alloc_obj_nolock (GCVTable *vtable, size_t size)
 				sgen_set_nursery_scan_start (new_next);
 				/* we just bump tlab_temp_end as well */
 				TLAB_TEMP_END = MIN (TLAB_REAL_END, TLAB_NEXT + SGEN_SCAN_START_SIZE);
-				SGEN_LOG (5, "Expanding local alloc: %p-%p", TLAB_NEXT, TLAB_TEMP_END);
 			}
 		} else if (available_in_tlab > SGEN_MAX_NURSERY_WASTE) {
 			/* Allocate directly from the nursery */
@@ -431,7 +425,6 @@ sgen_try_alloc_obj_nolock (GCVTable *vtable, size_t size)
 	HEAVY_STAT (stat_bytes_alloced += size);
 
 	CANARIFY_ALLOC(p,real_size);
-	SGEN_LOG (6, "Allocated object %p, vtable: %p (%s), size: %zd", p, vtable, sgen_client_vtable_get_name (vtable), size);
 	binary_protocol_alloc (p, vtable, size);
 	if (G_UNLIKELY (MONO_GC_NURSERY_OBJ_ALLOC_ENABLED ()))
 		MONO_GC_NURSERY_OBJ_ALLOC ((mword)p, size, sgen_client_vtable_get_namespace (vtable), sgen_client_vtable_get_name (vtable));
@@ -509,7 +502,6 @@ mono_gc_alloc_pinned_obj (MonoVTable *vtable, size_t size)
 		p = major_collector.alloc_small_pinned_obj ((GCVTable*)vtable, size, SGEN_VTABLE_HAS_REFERENCES ((GCVTable*)vtable));
 	}
 	if (G_LIKELY (p)) {
-		SGEN_LOG (6, "Allocated pinned object %p, vtable: %p (%s), size: %zd", p, vtable, vtable->klass->name, size);
 		if (size > SGEN_MAX_SMALL_OBJ_SIZE)
 			MONO_GC_MAJOR_OBJ_ALLOC_LARGE ((mword)p, size, vtable->klass->name_space, vtable->klass->name);
 		else

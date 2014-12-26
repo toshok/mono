@@ -203,12 +203,6 @@ extern guint64 stat_objects_copied_major;
 		mono_gc_printf (gc_debug_file, format, ##__VA_ARGS__);	\
 } } while (0)
 
-#define SGEN_COND_LOG(level, cond, format, ...) do {	\
-	if (G_UNLIKELY ((level) <= SGEN_MAX_DEBUG_LEVEL && (level) <= gc_debug_level)) {	\
-		if (cond)	\
-			mono_gc_printf (gc_debug_file, format, ##__VA_ARGS__);	\
-} } while (0)
-
 extern int gc_debug_level;
 extern FILE* gc_debug_file;
 

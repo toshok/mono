@@ -58,10 +58,8 @@ par_copy_object_no_checks (char *destination, GCVTable *vt, void *obj, mword obj
 	if (G_UNLIKELY (mono_profiler_events & MONO_PROFILE_GC_MOVES))
 		sgen_register_moved_object (obj, destination);
 	obj = destination;
-	if (queue) {
-		SGEN_LOG (9, "Enqueuing gray object %p (%s)", obj, sgen_client_object_safe_name (obj));
+	if (queue)
 		GRAY_OBJECT_ENQUEUE (queue, obj, sgen_vtable_get_descriptor (vt));
-	}
 }
 
 /*

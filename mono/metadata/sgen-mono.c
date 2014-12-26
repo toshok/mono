@@ -88,8 +88,6 @@ mono_gc_wbarrier_value_copy (gpointer dest, gpointer src, int count, MonoClass *
 	HEAVY_STAT (++stat_wbarrier_value_copy);
 	g_assert (klass->valuetype);
 
-	SGEN_LOG (8, "Adding value remset at %p, count %d, descr %p for class %s (%p)", dest, count, klass->gc_descr, klass->name, klass);
-
 	if (sgen_ptr_in_nursery (dest) || ptr_on_stack (dest) || !sgen_gc_descr_has_references ((mword)klass->gc_descr)) {
 		size_t element_size = mono_class_value_size (klass, NULL);
 		size_t size = count * element_size;
@@ -147,7 +145,6 @@ mono_gc_wbarrier_set_arrayref (MonoArray *arr, gpointer slot_ptr, MonoObject* va
 		*(void**)slot_ptr = value;
 		return;
 	}
-	SGEN_LOG (8, "Adding remset at %p", slot_ptr);
 	if (value)
 		binary_protocol_wbarrier (slot_ptr, value, value->vtable);
 
@@ -508,8 +505,6 @@ sgen_client_clear_unreachable_ephemerons (ScanCopyContext ctx)
 		if (!sgen_is_object_alive_for_current_gen (object)) {
 			EphemeronLinkNode *tmp = current;
 
-			SGEN_LOG (5, "Dead Ephemeron array at %p", object);
-
 			if (prev)
 				prev->next = current->next;
 			else
@@ -524,8 +519,6 @@ sgen_client_clear_unreachable_ephemerons (ScanCopyContext ctx)
 		copy_func ((void**)&object, queue);
 		current->array = object;
 
-		SGEN_LOG (5, "Clearing unreachable entries for ephemeron array at %p", object);
-
 		array = (MonoArray*)object;
 		cur = mono_array_addr (array, Ephemeron, 0);
 		array_end = cur + mono_array_length_fast (array);
@@ -536,10 +529,6 @@ sgen_client_clear_unreachable_ephemerons (ScanCopyContext ctx)
 
 			if (!key || key == tombstone)
 				continue;
-
-			SGEN_LOG (5, "[%td] key %p (%s) value %p (%s)", cur - mono_array_addr (array, Ephemeron, 0),
-				key, sgen_is_object_alive_for_current_gen (key) ? "reachable" : "unreachable",
-				cur->value, cur->value && sgen_is_object_alive_for_current_gen (cur->value) ? "reachable" : "unreachable");
 
 			if (!sgen_is_object_alive_for_current_gen (key)) {
 				cur->key = tombstone;
@@ -570,13 +559,10 @@ sgen_client_mark_ephemerons (ScanCopyContext ctx)
 
 	for (current = ephemeron_list; current; current = current->next) {
 		char *object = current->array;
-		SGEN_LOG (5, "Ephemeron array at %p", object);
 
 		/*It has to be alive*/
-		if (!sgen_is_object_alive_for_current_gen (object)) {
-			SGEN_LOG (5, "\tnot reachable");
+		if (!sgen_is_object_alive_for_current_gen (object))
 			continue;
-		}
 
 		copy_func ((void**)&object, queue);
 
@@ -591,10 +577,6 @@ sgen_client_mark_ephemerons (ScanCopyContext ctx)
 			if (!key || key == tombstone)
 				continue;
 
-			SGEN_LOG (5, "[%td] key %p (%s) value %p (%s)", cur - mono_array_addr (array, Ephemeron, 0),
-				key, sgen_is_object_alive_for_current_gen (key) ? "reachable" : "unreachable",
-				cur->value, cur->value && sgen_is_object_alive_for_current_gen (cur->value) ? "reachable" : "unreachable");
-
 			if (sgen_is_object_alive_for_current_gen (key)) {
 				char *value = cur->value;
 
@@ -608,7 +590,6 @@ sgen_client_mark_ephemerons (ScanCopyContext ctx)
 		}
 	}
 
-	SGEN_LOG (5, "Ephemeron run finished. Is it done %d", nothing_marked);
 	return nothing_marked;
 }
 
@@ -627,8 +608,6 @@ mono_gc_ephemeron_array_add (MonoObject *obj)
 	node->array = (char*)obj;
 	node->next = ephemeron_list;
 	ephemeron_list = node;
-
-	SGEN_LOG (5, "Registered ephemeron array %p", obj);
 
 	UNLOCK_GC;
 	return TRUE;
@@ -654,7 +633,6 @@ static gboolean
 need_remove_object_for_domain (char *start, MonoDomain *domain)
 {
 	if (mono_object_domain (start) == domain) {
-		SGEN_LOG (4, "Need to cleanup object %p", start);
 		binary_protocol_cleanup (start, (gpointer)LOAD_VTABLE (start), safe_object_get_size ((GCObject*)start));
 		return TRUE;
 	}
@@ -675,10 +653,8 @@ process_object_for_domain_clearing (char *start, MonoDomain *domain)
 
 		/* The server could already have been zeroed out, so
 		   we need to check for that, too. */
-		if (server && (!SGEN_LOAD_VTABLE (server) || mono_object_domain (server) == domain)) {
-			SGEN_LOG (4, "Cleaning up remote pointer in %p to object %p", start, server);
+		if (server && (!SGEN_LOAD_VTABLE (server) || mono_object_domain (server) == domain))
 			((MonoRealProxy*)start)->unwrapped_server = NULL;
-		}
 	}
 #endif
 }
@@ -798,7 +774,6 @@ mono_gc_clear_domain (MonoDomain * domain)
 			else
 				los_object_list = bigobj->next;
 			bigobj = bigobj->next;
-			SGEN_LOG (4, "Freeing large object %p", bigobj->data);
 			sgen_los_free_object (to_free);
 			continue;
 		}
@@ -1794,7 +1769,6 @@ report_registered_roots_by_type (int root_type)
 	RootRecord *root;
 	report.count = 0;
 	SGEN_HASH_TABLE_FOREACH (&roots_hash [root_type], start_root, root) {
-		SGEN_LOG (6, "Precise root scan %p-%p (desc: %p)", start_root, root->end_root, (void*)root->root_desc);
 		precisely_report_roots_from (&report, start_root, (void**)root->end_root, root->root_desc);
 	} SGEN_HASH_TABLE_FOREACH_END;
 	notify_gc_roots (&report);

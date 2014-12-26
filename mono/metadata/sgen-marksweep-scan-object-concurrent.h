@@ -42,7 +42,6 @@ extern guint64 stat_scan_object_called_major;
 			PREFETCH_READ (__old);			\
 			major_copy_or_mark_object_with_evacuation_concurrent ((ptr), __old, queue); \
 			__copy = *(ptr);				\
-			SGEN_COND_LOG (9, __old != __copy, "Overwrote field at %p with %p (was: %p)", (ptr), *(ptr), __old); \
 			if (G_UNLIKELY (sgen_ptr_in_nursery (__copy) && !sgen_ptr_in_nursery ((ptr)) && !SGEN_OBJECT_IS_CEMENTED (__copy))) \
 				sgen_add_to_global_remset ((ptr), __copy);	\
 		} else {						\

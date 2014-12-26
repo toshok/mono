@@ -294,7 +294,6 @@ sgen_los_free_object (LOSObject *obj)
 {
 #ifndef LOS_DUMMY
 	size_t size = obj->size;
-	SGEN_LOG (4, "Freed large object %p, size %lu", obj->data, (unsigned long)obj->size);
 	binary_protocol_empty (obj->data, obj->size);
 
 	los_memory_usage -= size;
@@ -389,7 +388,6 @@ sgen_los_alloc_large_inner (GCVTable *vtable, size_t size)
 	los_object_list = obj;
 	los_memory_usage += size;
 	los_num_objects++;
-	SGEN_LOG (4, "Allocated large object %p, vtable: %p (%s), size: %zd", obj->data, vtable, sgen_client_vtable_get_name (vtable), size);
 	binary_protocol_alloc (obj->data, vtable, size);
 
 #ifdef LOS_CONSISTENCY_CHECK

@@ -156,8 +156,6 @@ sgen_collect_bridge_objects (int generation, ScanCopyContext ctx)
 			/* insert it into the major hash */
 			sgen_hash_table_replace (&major_finalizable_hash, tagged_object_apply (copy, tag), NULL, NULL);
 
-			SGEN_LOG (5, "Promoting finalization of object %p (%s) (was at %p) to major table", copy, sgen_client_object_safe_name ((GCObject*)copy), object);
-
 			continue;
 		} else if (copy != (char*)object) {
 			/* update pointer */
@@ -165,8 +163,6 @@ sgen_collect_bridge_objects (int generation, ScanCopyContext ctx)
 
 			/* register for reinsertion */
 			sgen_pointer_queue_add (&moved_fin_objects, tagged_object_apply (copy, tag));
-
-			SGEN_LOG (5, "Updating object for finalization: %p (%s) (was at %p)", copy, sgen_client_object_safe_name ((GCObject*)copy), object);
 
 			continue;
 		}
@@ -208,7 +204,6 @@ sgen_finalize_in_range (int generation, ScanCopyContext ctx)
 				num_ready_finalizers++;
 				sgen_queue_finalization_entry (copy);
 				/* Make it survive */
-				SGEN_LOG (5, "Queueing object for finalization: %p (%s) (was at %p) (%d/%d)", copy, sgen_client_object_safe_name (copy), object, num_ready_finalizers, sgen_hash_table_num_entries (hash_table));
 				continue;
 			} else {
 				if (hash_table == &minor_finalizable_hash && !ptr_in_nursery (copy)) {
@@ -218,8 +213,6 @@ sgen_finalize_in_range (int generation, ScanCopyContext ctx)
 					/* insert it into the major hash */
 					sgen_hash_table_replace (&major_finalizable_hash, tagged_object_apply (copy, tag), NULL, NULL);
 
-					SGEN_LOG (5, "Promoting finalization of object %p (%s) (was at %p) to major table", copy, sgen_client_object_safe_name (copy), object);
-
 					continue;
 				} else if (copy != object) {
 					/* update pointer */
@@ -227,8 +220,6 @@ sgen_finalize_in_range (int generation, ScanCopyContext ctx)
 
 					/* register for reinsertion */
 					sgen_pointer_queue_add (&moved_fin_objects, tagged_object_apply (copy, tag));
-
-					SGEN_LOG (5, "Updating object for finalization: %p (%s) (was at %p)", copy, sgen_client_object_safe_name (copy), object);
 
 					continue;
 				}
@@ -254,17 +245,10 @@ register_for_finalization (GCObject *obj, void *user_data, int generation)
 
 	g_assert (user_data == NULL || user_data == mono_gc_run_finalize);
 
-	if (user_data) {
-		if (sgen_hash_table_replace (hash_table, obj, NULL, NULL)) {
-			GCVTable *vt = SGEN_LOAD_VTABLE_UNCHECKED (obj);
-			SGEN_LOG (5, "Added finalizer for object: %p (%s) (%d) to %s table", obj, sgen_client_vtable_get_name (vt), hash_table->num_entries, sgen_generation_name (generation));
-		}
-	} else {
-		if (sgen_hash_table_remove (hash_table, obj, NULL)) {
-			GCVTable *vt = SGEN_LOAD_VTABLE_UNCHECKED (obj);
-			SGEN_LOG (5, "Removed finalizer for object: %p (%s) (%d)", obj, sgen_client_vtable_get_name (vt), hash_table->num_entries);
-		}
-	}
+	if (user_data)
+		sgen_hash_table_replace (hash_table, obj, NULL, NULL);
+	else
+		sgen_hash_table_remove (hash_table, obj, NULL);
 }
 
 /*
@@ -593,7 +577,6 @@ finalizers_for_domain (MonoDomain *domain, GCObject **out_array, int out_size,
 			/* remove and put in out_array */
 			SGEN_HASH_TABLE_FOREACH_REMOVE (TRUE);
 			out_array [count ++] = object;
-			SGEN_LOG (5, "Collecting object for finalization: %p (%s) (%d/%d)", object, sgen_client_object_safe_name (object), num_ready_finalizers, sgen_hash_table_num_entries (hash_table));
 			if (count == out_size)
 				return count;
 			continue;
@@ -652,16 +635,11 @@ add_or_remove_disappearing_link (GCObject *obj, void **link, int generation)
 	SgenHashTable *hash_table = get_dislink_hash_table (generation);
 
 	if (!obj) {
-		if (sgen_hash_table_remove (hash_table, link, NULL)) {
-			SGEN_LOG (5, "Removed dislink %p (%d) from %s table",
-					link, hash_table->num_entries, sgen_generation_name (generation));
-		}
+		sgen_hash_table_remove (hash_table, link, NULL);
 		return;
 	}
 
 	sgen_hash_table_replace (hash_table, link, NULL, NULL);
-	SGEN_LOG (5, "Added dislink for object: %p (%s) at %p to %s table",
-			obj, sgen_client_vtable_get_name (SGEN_LOAD_VTABLE_UNCHECKED (obj)), link, sgen_generation_name (generation));
 }
 
 /* LOCKING: requires that the GC lock is held */
@@ -686,10 +664,8 @@ sgen_null_link_in_range (int generation, gboolean before_finalization, ScanCopyC
 
 		We should simply skip the entry as the staged removal will take place during the next GC.
 		*/
-		if (!*link) {
-			SGEN_LOG (5, "Dislink %p was externally nullified", link);
+		if (!*link)
 			continue;
-		}
 
 		track = DISLINK_TRACK (link);
 		/*
@@ -706,16 +682,13 @@ sgen_null_link_in_range (int generation, gboolean before_finalization, ScanCopyC
 			/*
 			We should guard against a null object been hidden. This can sometimes happen.
 			*/
-			if (!object) {
-				SGEN_LOG (5, "Dislink %p with a hidden null object", link);
+			if (!object)
 				continue;
-			}
 
 			if (!major_collector.is_object_live (object)) {
 				if (sgen_gc_is_object_ready_for_finalization (object)) {
 					*link = NULL;
 					binary_protocol_dislink_update (link, NULL, 0, 0);
-					SGEN_LOG (5, "Dislink nullified at %p to GCed object %p", link, object);
 					SGEN_HASH_TABLE_FOREACH_REMOVE (TRUE);
 					continue;
 				} else {
@@ -738,13 +711,10 @@ sgen_null_link_in_range (int generation, gboolean before_finalization, ScanCopyC
 						add_or_remove_disappearing_link ((GCObject*)copy, link, GENERATION_OLD);
 						binary_protocol_dislink_update (link, copy, track, 0);
 
-						SGEN_LOG (5, "Upgraded dislink at %p to major because object %p moved to %p", link, object, copy);
-
 						continue;
 					} else {
 						*link = HIDE_POINTER (copy, track);
 						binary_protocol_dislink_update (link, copy, track, 0);
-						SGEN_LOG (5, "Updated dislink at %p to %p", link, DISLINK_OBJECT (link));
 					}
 				}
 			}
@@ -773,7 +743,6 @@ sgen_null_links_for_domain (MonoDomain *domain, int generation)
 				 * This can happen if finalizers are not ran, i.e. Environment.Exit ()
 				 * is called from finalizer like in finalizer-abort.cs.
 				 */
-				SGEN_LOG (5, "Disappearing link %p not freed", link);
 			}
 
 			SGEN_HASH_TABLE_FOREACH_REMOVE (free);
@@ -801,7 +770,6 @@ sgen_null_links_with_predicate (int generation, WeakLinkAlivePredicateFunc predi
 		if (!is_alive) {
 			*link = NULL;
 			binary_protocol_dislink_update (link, NULL, 0, 0);
-			SGEN_LOG (5, "Dislink nullified by predicate at %p to GCed object %p", link, object);
 			SGEN_HASH_TABLE_FOREACH_REMOVE (TRUE);
 			continue;
 		}
@@ -819,8 +787,6 @@ sgen_remove_finalizers_for_domain (MonoDomain *domain, int generation)
 		object = tagged_object_get_object (object);
 
 		if (mono_object_domain (object) == domain) {
-			SGEN_LOG (5, "Unregistering finalizer for object: %p (%s)", object, sgen_client_object_safe_name (object));
-
 			SGEN_HASH_TABLE_FOREACH_REMOVE (TRUE);
 			continue;
 		}

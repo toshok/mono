@@ -107,8 +107,6 @@ suspend_thread (SgenThreadInfo *info, void *context)
 	if (mono_gc_get_gc_callbacks ()->thread_suspend_func)
 		mono_gc_get_gc_callbacks ()->thread_suspend_func (info->runtime_data, context, NULL);
 
-	SGEN_LOG (4, "Posting suspend_ack_semaphore for suspend from %p %p", info, (gpointer)mono_native_thread_id_get ());
-
 	/*
 	Block the restart signal. 
 	We need to block the restart signal while posting to the suspend_ack semaphore or we race to sigsuspend,
@@ -129,7 +127,6 @@ suspend_thread (SgenThreadInfo *info, void *context)
 	/* Unblock the restart signal. */
 	pthread_sigmask (SIG_UNBLOCK, &suspend_ack_signal_mask, NULL);
 
-	SGEN_LOG (4, "Posting suspend_ack_semaphore for resume from %p %p\n", info, (gpointer)mono_native_thread_id_get ());
 	/* notify the waiting thread */
 	MONO_SEM_POST (suspend_ack_semaphore_ptr);
 }
@@ -163,7 +160,6 @@ MONO_SIG_HANDLER_FUNC (static, restart_handler)
 
 	info = mono_thread_info_current ();
 	info->signal = restart_signal_num;
-	SGEN_LOG (4, "Restart handler in %p %p", info, (gpointer)mono_native_thread_id_get ());
 	errno = old_errno;
 }
 
@@ -220,8 +216,6 @@ sgen_thread_handshake (BOOL suspend)
 	} END_FOREACH_THREAD_SAFE
 
 	sgen_wait_for_suspend_ack (count);
-
-	SGEN_LOG (4, "%s handshake for %d threads\n", suspend ? "suspend" : "resume", count);
 
 	return count;
 }

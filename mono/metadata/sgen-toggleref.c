@@ -46,8 +46,6 @@ sgen_process_togglerefs (void)
 	int i, w;
 	int toggle_ref_counts [3] = { 0, 0, 0 };
 
-	SGEN_LOG (4, "Proccessing ToggleRefs %d", toggleref_array_size);
-
 	for (i = w = 0; i < toggleref_array_size; ++i) {
 		int res;
 		MonoGCToggleRef r = toggleref_array [i];
@@ -82,12 +80,6 @@ sgen_process_togglerefs (void)
 	}
 
 	toggleref_array_size = w;
-
-	SGEN_LOG (4, "Done Proccessing ToggleRefs dropped %d strong %d weak %d final size %d",
-		toggle_ref_counts [MONO_TOGGLE_REF_DROP],
-		toggle_ref_counts [MONO_TOGGLE_REF_STRONG],
-		toggle_ref_counts [MONO_TOGGLE_REF_WEAK],
-		w);
 }
 
 void sgen_mark_togglerefs (char *start, char *end, ScanCopyContext ctx)
@@ -96,15 +88,11 @@ void sgen_mark_togglerefs (char *start, char *end, ScanCopyContext ctx)
 	SgenGrayQueue *queue = ctx.queue;
 	int i;
 
-	SGEN_LOG (4, "Marking ToggleRefs %d", toggleref_array_size);
-
 	for (i = 0; i < toggleref_array_size; ++i) {
 		if (toggleref_array [i].strong_ref) {
 			char *object = toggleref_array [i].strong_ref;
-			if (object >= start && object < end) {
-				SGEN_LOG (6, "\tcopying strong slot %d", i);
+			if (object >= start && object < end)
 				copy_func (&toggleref_array [i].strong_ref, queue);
-			}
 		}
 	}
 	sgen_drain_gray_stack (-1, ctx);
@@ -116,20 +104,15 @@ void sgen_clear_togglerefs (char *start, char *end, ScanCopyContext ctx)
 	SgenGrayQueue *queue = ctx.queue;
 	int i;
 
-	SGEN_LOG (4, "Clearing ToggleRefs %d", toggleref_array_size);
-
 	for (i = 0; i < toggleref_array_size; ++i) {
 		if (toggleref_array [i].weak_ref) {
 			char *object = toggleref_array [i].weak_ref;
 
 			if (object >= start && object < end) {
-				if (sgen_gc_is_object_ready_for_finalization (object)) {
-					SGEN_LOG (6, "\tcleaning weak slot %d", i);
+				if (sgen_gc_is_object_ready_for_finalization (object))
 					toggleref_array [i].weak_ref = NULL; /* We defer compaction to only happen on the callback step. */
-				} else {
-					SGEN_LOG (6, "\tkeeping weak slot %d", i);
+				else
 					copy_func (&toggleref_array [i].weak_ref, queue);
-				}
 			}
 		}
 	}
@@ -177,8 +160,6 @@ mono_gc_toggleref_add (MonoObject *object, mono_bool strong_ref)
 {
 	if (!toggleref_callback)
 		return;
-
-	SGEN_LOG (4, "Adding toggleref %p %d", object, strong_ref);
 
 	sgen_gc_lock ();
 

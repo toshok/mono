@@ -82,13 +82,8 @@ sgen_pinning_get_entry (size_t index)
 void
 sgen_find_section_pin_queue_start_end (GCMemSection *section)
 {
-	SGEN_LOG (6, "Pinning from section %p (%p-%p)", section, section->data, section->end_data);
-
 	sgen_find_optimized_pin_queue_area (section->data, section->end_data,
 			&section->pin_queue_first_entry, &section->pin_queue_last_entry);
-
-	SGEN_LOG (6, "Found %zd pinning addresses in section %p",
-			section->pin_queue_last_entry - section->pin_queue_first_entry, section);
 }
 
 /*This will setup the given section for the while pin queue. */
@@ -163,17 +158,6 @@ size_t
 sgen_get_pinned_count (void)
 {
 	return pin_queue.next_slot;
-}
-
-void
-sgen_dump_pin_queue (void)
-{
-	int i;
-
-	for (i = 0; i < last_num_pinned; ++i) {
-		void *ptr = pin_queue.data [i];
-		SGEN_LOG (3, "Bastard pinning obj %p (%s), size: %zd", ptr, sgen_client_object_safe_name (ptr), sgen_safe_object_get_size (ptr));
-	}
 }
 
 typedef struct _CementHashEntry CementHashEntry;
