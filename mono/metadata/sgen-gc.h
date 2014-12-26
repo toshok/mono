@@ -1089,6 +1089,9 @@ void mono_gc_scan_for_specific_ref (GCObject *key, gboolean precise) MONO_INTERN
 void sgen_debug_enable_heap_dump (const char *filename) MONO_INTERNAL;
 void sgen_debug_dump_heap (const char *type, int num, const char *reason) MONO_INTERNAL;
 
+void sgen_debug_verify_nursery (gboolean do_dump_nursery_content) MONO_INTERNAL;
+void sgen_debug_check_nursery_is_clean (void) MONO_INTERNAL;
+
 /* Write barrier support */
 
 /*
