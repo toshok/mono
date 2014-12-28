@@ -439,13 +439,6 @@ void sgen_init_internal_allocator (void) MONO_INTERNAL;
 
 #include "metadata/sgen-client-mono.h"
 
-/* FIXME: get rid of this in favor of pointer queues! */
-typedef struct _ObjectList ObjectList;
-struct _ObjectList {
-	GCObject *obj;
-	ObjectList *next;
-};
-
 typedef void (*CopyOrMarkObjectFunc) (void**, SgenGrayQueue*);
 typedef void (*ScanObjectFunc) (char *obj, mword desc, SgenGrayQueue*);
 typedef void (*ScanVTypeFunc) (char*, mword desc, SgenGrayQueue* BINARY_PROTOCOL_ARG (size_t size));
