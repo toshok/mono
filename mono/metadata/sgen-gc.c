@@ -206,7 +206,6 @@
 #include "utils/mono-mmap.h"
 #include "utils/mono-time.h"
 #include "utils/mono-semaphore.h"
-#include "utils/mono-counters.h"
 #include "utils/mono-memory-model.h"
 
 #include <mono/utils/memcheck.h>
@@ -291,15 +290,15 @@ guint64 stat_nursery_copy_object_failed_forwarded = 0;
 guint64 stat_nursery_copy_object_failed_pinned = 0;
 guint64 stat_nursery_copy_object_failed_to_space = 0;
 
-static int stat_wbarrier_add_to_global_remset = 0;
-static int stat_wbarrier_set_field = 0;
-static int stat_wbarrier_set_arrayref = 0;
-static int stat_wbarrier_arrayref_copy = 0;
-static int stat_wbarrier_generic_store = 0;
-static int stat_wbarrier_generic_store_atomic = 0;
-static int stat_wbarrier_set_root = 0;
-static int stat_wbarrier_value_copy = 0;
-static int stat_wbarrier_object_copy = 0;
+static guint64 stat_wbarrier_add_to_global_remset = 0;
+static guint64 stat_wbarrier_set_field = 0;
+static guint64 stat_wbarrier_set_arrayref = 0;
+static guint64 stat_wbarrier_arrayref_copy = 0;
+static guint64 stat_wbarrier_generic_store = 0;
+static guint64 stat_wbarrier_generic_store_atomic = 0;
+static guint64 stat_wbarrier_set_root = 0;
+static guint64 stat_wbarrier_value_copy = 0;
+static guint64 stat_wbarrier_object_copy = 0;
 #endif
 
 static guint64 stat_pinned_objects = 0;
@@ -1355,61 +1354,61 @@ init_stats (void)
 	if (inited)
 		return;
 
-	mono_counters_register ("Collection max time",  MONO_COUNTER_GC | MONO_COUNTER_ULONG | MONO_COUNTER_TIME | MONO_COUNTER_MONOTONIC, &time_max);
+	sgen_client_counter_register_time ("Collection max time", &time_max, TRUE);
 
-	mono_counters_register ("Minor fragment clear", MONO_COUNTER_GC | MONO_COUNTER_ULONG | MONO_COUNTER_TIME, &time_minor_pre_collection_fragment_clear);
-	mono_counters_register ("Minor pinning", MONO_COUNTER_GC | MONO_COUNTER_ULONG | MONO_COUNTER_TIME, &time_minor_pinning);
-	mono_counters_register ("Minor scan remembered set", MONO_COUNTER_GC | MONO_COUNTER_ULONG | MONO_COUNTER_TIME, &time_minor_scan_remsets);
-	mono_counters_register ("Minor scan pinned", MONO_COUNTER_GC | MONO_COUNTER_ULONG | MONO_COUNTER_TIME, &time_minor_scan_pinned);
-	mono_counters_register ("Minor scan registered roots", MONO_COUNTER_GC | MONO_COUNTER_ULONG | MONO_COUNTER_TIME, &time_minor_scan_registered_roots);
-	mono_counters_register ("Minor scan thread data", MONO_COUNTER_GC | MONO_COUNTER_ULONG | MONO_COUNTER_TIME, &time_minor_scan_thread_data);
-	mono_counters_register ("Minor finish gray stack", MONO_COUNTER_GC | MONO_COUNTER_ULONG | MONO_COUNTER_TIME, &time_minor_finish_gray_stack);
-	mono_counters_register ("Minor fragment creation", MONO_COUNTER_GC | MONO_COUNTER_ULONG | MONO_COUNTER_TIME, &time_minor_fragment_creation);
+	sgen_client_counter_register_time ("Minor fragment clear", &time_minor_pre_collection_fragment_clear, FALSE);
+	sgen_client_counter_register_time ("Minor pinning", &time_minor_pinning, FALSE);
+	sgen_client_counter_register_time ("Minor scan remembered set", &time_minor_scan_remsets, FALSE);
+	sgen_client_counter_register_time ("Minor scan pinned", &time_minor_scan_pinned, FALSE);
+	sgen_client_counter_register_time ("Minor scan registered roots", &time_minor_scan_registered_roots, FALSE);
+	sgen_client_counter_register_time ("Minor scan thread data", &time_minor_scan_thread_data, FALSE);
+	sgen_client_counter_register_time ("Minor finish gray stack", &time_minor_finish_gray_stack, FALSE);
+	sgen_client_counter_register_time ("Minor fragment creation", &time_minor_fragment_creation, FALSE);
 
-	mono_counters_register ("Major fragment clear", MONO_COUNTER_GC | MONO_COUNTER_ULONG | MONO_COUNTER_TIME, &time_major_pre_collection_fragment_clear);
-	mono_counters_register ("Major pinning", MONO_COUNTER_GC | MONO_COUNTER_ULONG | MONO_COUNTER_TIME, &time_major_pinning);
-	mono_counters_register ("Major scan pinned", MONO_COUNTER_GC | MONO_COUNTER_ULONG | MONO_COUNTER_TIME, &time_major_scan_pinned);
-	mono_counters_register ("Major scan registered roots", MONO_COUNTER_GC | MONO_COUNTER_ULONG | MONO_COUNTER_TIME, &time_major_scan_registered_roots);
-	mono_counters_register ("Major scan thread data", MONO_COUNTER_GC | MONO_COUNTER_ULONG | MONO_COUNTER_TIME, &time_major_scan_thread_data);
-	mono_counters_register ("Major scan alloc_pinned", MONO_COUNTER_GC | MONO_COUNTER_ULONG | MONO_COUNTER_TIME, &time_major_scan_alloc_pinned);
-	mono_counters_register ("Major scan finalized", MONO_COUNTER_GC | MONO_COUNTER_ULONG | MONO_COUNTER_TIME, &time_major_scan_finalized);
-	mono_counters_register ("Major scan big objects", MONO_COUNTER_GC | MONO_COUNTER_ULONG | MONO_COUNTER_TIME, &time_major_scan_big_objects);
-	mono_counters_register ("Major finish gray stack", MONO_COUNTER_GC | MONO_COUNTER_ULONG | MONO_COUNTER_TIME, &time_major_finish_gray_stack);
-	mono_counters_register ("Major free big objects", MONO_COUNTER_GC | MONO_COUNTER_ULONG | MONO_COUNTER_TIME, &time_major_free_bigobjs);
-	mono_counters_register ("Major LOS sweep", MONO_COUNTER_GC | MONO_COUNTER_ULONG | MONO_COUNTER_TIME, &time_major_los_sweep);
-	mono_counters_register ("Major sweep", MONO_COUNTER_GC | MONO_COUNTER_ULONG | MONO_COUNTER_TIME, &time_major_sweep);
-	mono_counters_register ("Major fragment creation", MONO_COUNTER_GC | MONO_COUNTER_ULONG | MONO_COUNTER_TIME, &time_major_fragment_creation);
+	sgen_client_counter_register_time ("Major fragment clear", &time_major_pre_collection_fragment_clear, FALSE);
+	sgen_client_counter_register_time ("Major pinning", &time_major_pinning, FALSE);
+	sgen_client_counter_register_time ("Major scan pinned", &time_major_scan_pinned, FALSE);
+	sgen_client_counter_register_time ("Major scan registered roots", &time_major_scan_registered_roots, FALSE);
+	sgen_client_counter_register_time ("Major scan thread data", &time_major_scan_thread_data, FALSE);
+	sgen_client_counter_register_time ("Major scan alloc_pinned", &time_major_scan_alloc_pinned, FALSE);
+	sgen_client_counter_register_time ("Major scan finalized", &time_major_scan_finalized, FALSE);
+	sgen_client_counter_register_time ("Major scan big objects", &time_major_scan_big_objects, FALSE);
+	sgen_client_counter_register_time ("Major finish gray stack", &time_major_finish_gray_stack, FALSE);
+	sgen_client_counter_register_time ("Major free big objects", &time_major_free_bigobjs, FALSE);
+	sgen_client_counter_register_time ("Major LOS sweep", &time_major_los_sweep, FALSE);
+	sgen_client_counter_register_time ("Major sweep", &time_major_sweep, FALSE);
+	sgen_client_counter_register_time ("Major fragment creation", &time_major_fragment_creation, FALSE);
 
-	mono_counters_register ("Number of pinned objects", MONO_COUNTER_GC | MONO_COUNTER_ULONG, &stat_pinned_objects);
+	sgen_client_counter_register_uint64 ("Number of pinned objects", &stat_pinned_objects);
 
 #ifdef HEAVY_STATISTICS
-	mono_counters_register ("WBarrier remember pointer", MONO_COUNTER_GC | MONO_COUNTER_INT, &stat_wbarrier_add_to_global_remset);
-	mono_counters_register ("WBarrier set field", MONO_COUNTER_GC | MONO_COUNTER_INT, &stat_wbarrier_set_field);
-	mono_counters_register ("WBarrier set arrayref", MONO_COUNTER_GC | MONO_COUNTER_INT, &stat_wbarrier_set_arrayref);
-	mono_counters_register ("WBarrier arrayref copy", MONO_COUNTER_GC | MONO_COUNTER_INT, &stat_wbarrier_arrayref_copy);
-	mono_counters_register ("WBarrier generic store called", MONO_COUNTER_GC | MONO_COUNTER_INT, &stat_wbarrier_generic_store);
-	mono_counters_register ("WBarrier generic atomic store called", MONO_COUNTER_GC | MONO_COUNTER_INT, &stat_wbarrier_generic_store_atomic);
-	mono_counters_register ("WBarrier set root", MONO_COUNTER_GC | MONO_COUNTER_INT, &stat_wbarrier_set_root);
-	mono_counters_register ("WBarrier value copy", MONO_COUNTER_GC | MONO_COUNTER_INT, &stat_wbarrier_value_copy);
-	mono_counters_register ("WBarrier object copy", MONO_COUNTER_GC | MONO_COUNTER_INT, &stat_wbarrier_object_copy);
+	sgen_client_counter_register_uint64 ("WBarrier remember pointer", &stat_wbarrier_add_to_global_remset);
+	sgen_client_counter_register_uint64 ("WBarrier set field", &stat_wbarrier_set_field);
+	sgen_client_counter_register_uint64 ("WBarrier set arrayref", &stat_wbarrier_set_arrayref);
+	sgen_client_counter_register_uint64 ("WBarrier arrayref copy", &stat_wbarrier_arrayref_copy);
+	sgen_client_counter_register_uint64 ("WBarrier generic store called", &stat_wbarrier_generic_store);
+	sgen_client_counter_register_uint64 ("WBarrier generic atomic store called", &stat_wbarrier_generic_store_atomic);
+	sgen_client_counter_register_uint64 ("WBarrier set root", &stat_wbarrier_set_root);
+	sgen_client_counter_register_uint64 ("WBarrier value copy", &stat_wbarrier_value_copy);
+	sgen_client_counter_register_uint64 ("WBarrier object copy", &stat_wbarrier_object_copy);
 
-	mono_counters_register ("# objects allocated degraded", MONO_COUNTER_GC | MONO_COUNTER_ULONG, &stat_objects_alloced_degraded);
-	mono_counters_register ("bytes allocated degraded", MONO_COUNTER_GC | MONO_COUNTER_ULONG, &stat_bytes_alloced_degraded);
+	sgen_client_counter_register_uint64 ("# objects allocated degraded", &stat_objects_alloced_degraded);
+	sgen_client_counter_register_uint64 ("bytes allocated degraded", &stat_bytes_alloced_degraded);
 
-	mono_counters_register ("# copy_object() called (nursery)", MONO_COUNTER_GC | MONO_COUNTER_ULONG, &stat_copy_object_called_nursery);
-	mono_counters_register ("# objects copied (nursery)", MONO_COUNTER_GC | MONO_COUNTER_ULONG, &stat_objects_copied_nursery);
-	mono_counters_register ("# copy_object() called (major)", MONO_COUNTER_GC | MONO_COUNTER_ULONG, &stat_copy_object_called_major);
-	mono_counters_register ("# objects copied (major)", MONO_COUNTER_GC | MONO_COUNTER_ULONG, &stat_objects_copied_major);
+	sgen_client_counter_register_uint64 ("# copy_object() called (nursery)", &stat_copy_object_called_nursery);
+	sgen_client_counter_register_uint64 ("# objects copied (nursery)", &stat_objects_copied_nursery);
+	sgen_client_counter_register_uint64 ("# copy_object() called (major)", &stat_copy_object_called_major);
+	sgen_client_counter_register_uint64 ("# objects copied (major)", &stat_objects_copied_major);
 
-	mono_counters_register ("# scan_object() called (nursery)", MONO_COUNTER_GC | MONO_COUNTER_ULONG, &stat_scan_object_called_nursery);
-	mono_counters_register ("# scan_object() called (major)", MONO_COUNTER_GC | MONO_COUNTER_ULONG, &stat_scan_object_called_major);
+	sgen_client_counter_register_uint64 ("# scan_object() called (nursery)", &stat_scan_object_called_nursery);
+	sgen_client_counter_register_uint64 ("# scan_object() called (major)", &stat_scan_object_called_major);
 
-	mono_counters_register ("Slots allocated in vain", MONO_COUNTER_GC | MONO_COUNTER_ULONG, &stat_slots_allocated_in_vain);
+	sgen_client_counter_register_uint64 ("Slots allocated in vain", &stat_slots_allocated_in_vain);
 
-	mono_counters_register ("# nursery copy_object() failed from space", MONO_COUNTER_GC | MONO_COUNTER_ULONG, &stat_nursery_copy_object_failed_from_space);
-	mono_counters_register ("# nursery copy_object() failed forwarded", MONO_COUNTER_GC | MONO_COUNTER_ULONG, &stat_nursery_copy_object_failed_forwarded);
-	mono_counters_register ("# nursery copy_object() failed pinned", MONO_COUNTER_GC | MONO_COUNTER_ULONG, &stat_nursery_copy_object_failed_pinned);
-	mono_counters_register ("# nursery copy_object() failed to space", MONO_COUNTER_GC | MONO_COUNTER_ULONG, &stat_nursery_copy_object_failed_to_space);
+	sgen_client_counter_register_uint64 ("# nursery copy_object() failed from space", &stat_nursery_copy_object_failed_from_space);
+	sgen_client_counter_register_uint64 ("# nursery copy_object() failed forwarded", &stat_nursery_copy_object_failed_forwarded);
+	sgen_client_counter_register_uint64 ("# nursery copy_object() failed pinned", &stat_nursery_copy_object_failed_pinned);
+	sgen_client_counter_register_uint64 ("# nursery copy_object() failed to space", &stat_nursery_copy_object_failed_to_space);
 
 	sgen_nursery_allocator_init_heavy_stats ();
 	sgen_alloc_init_heavy_stats ();
@@ -3341,7 +3340,7 @@ mono_gc_base_init (void)
 	gboolean have_split_nursery = FALSE;
 	gboolean cement_enabled = TRUE;
 
-	mono_counters_init ();
+	sgen_client_init_early ();
 
 	do {
 		result = InterlockedCompareExchange (&gc_initialized, -1, 0);

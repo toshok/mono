@@ -24,7 +24,7 @@
 
 #include "metadata/sgen-gc.h"
 #include "metadata/sgen-workers.h"
-#include "utils/mono-counters.h"
+#include "metadata/sgen-client.h"
 
 static int workers_num;
 static WorkerData *workers_data;
@@ -600,10 +600,10 @@ sgen_workers_init (int num_workers)
 
 	sgen_register_fixed_internal_mem_type (INTERNAL_MEM_JOB_QUEUE_ENTRY, sizeof (JobQueueEntry));
 
-	mono_counters_register ("Stolen from self lock", MONO_COUNTER_GC | MONO_COUNTER_ULONG, &stat_workers_stolen_from_self_lock);
-	mono_counters_register ("Stolen from self no lock", MONO_COUNTER_GC | MONO_COUNTER_ULONG, &stat_workers_stolen_from_self_no_lock);
-	mono_counters_register ("Stolen from others", MONO_COUNTER_GC | MONO_COUNTER_ULONG, &stat_workers_stolen_from_others);
-	mono_counters_register ("# workers waited", MONO_COUNTER_GC | MONO_COUNTER_ULONG, &stat_workers_num_waited);
+	sgen_client_counter_register_uint64 ("Stolen from self lock", &stat_workers_stolen_from_self_lock);
+	sgen_client_counter_register_uint64 ("Stolen from self no lock", &stat_workers_stolen_from_self_no_lock);
+	sgen_client_counter_register_uint64 ("Stolen from others", &stat_workers_stolen_from_others);
+	sgen_client_counter_register_uint64 ("# workers waited", &stat_workers_num_waited);
 }
 
 /* only the GC thread is allowed to start and join workers */

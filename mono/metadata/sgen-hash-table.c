@@ -27,7 +27,6 @@
 
 #include <mono/metadata/sgen-gc.h>
 #include <mono/metadata/sgen-hash-table.h>
-#include <mono/utils/mono-counters.h>
 
 #ifdef HEAVY_STATISTICS
 static guint64 stat_lookups;
@@ -241,9 +240,9 @@ void
 sgen_init_hash_table (void)
 {
 #ifdef HEAVY_STATISTICS
-	mono_counters_register ("Hash table lookups", MONO_COUNTER_GC | MONO_COUNTER_ULONG, &stat_lookups);
-	mono_counters_register ("Hash table lookup iterations", MONO_COUNTER_GC | MONO_COUNTER_ULONG, &stat_lookup_iterations);
-	mono_counters_register ("Hash table lookup max iterations", MONO_COUNTER_GC | MONO_COUNTER_ULONG, &stat_lookup_max_iterations);
+	sgen_client_counter_register_uint64 ("Hash table lookups", &stat_lookups);
+	sgen_client_counter_register_uint64 ("Hash table lookup iterations", &stat_lookup_iterations);
+	sgen_client_counter_register_uint64 ("Hash table lookup max iterations", &stat_lookup_max_iterations);
 #endif
 }
 

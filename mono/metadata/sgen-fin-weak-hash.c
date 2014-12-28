@@ -32,7 +32,6 @@
 #include "metadata/sgen-protocol.h"
 #include "metadata/sgen-pointer-queue.h"
 #include "metadata/sgen-client.h"
-#include "utils/mono-counters.h"
 
 #define ptr_in_nursery sgen_ptr_in_nursery
 
@@ -862,12 +861,12 @@ void
 sgen_init_fin_weak_hash (void)
 {
 #ifdef HEAVY_STATISTICS
-	mono_counters_register ("FinWeak Successes", MONO_COUNTER_GC | MONO_COUNTER_ULONG, &stat_success);
-	mono_counters_register ("FinWeak Overflow aborts", MONO_COUNTER_GC | MONO_COUNTER_ULONG, &stat_overflow_abort);
-	mono_counters_register ("FinWeak Wait for processing", MONO_COUNTER_GC | MONO_COUNTER_ULONG, &stat_wait_for_processing);
-	mono_counters_register ("FinWeak Increment other thread", MONO_COUNTER_GC | MONO_COUNTER_ULONG, &stat_increment_other_thread);
-	mono_counters_register ("FinWeak Index decremented", MONO_COUNTER_GC | MONO_COUNTER_ULONG, &stat_index_decremented);
-	mono_counters_register ("FinWeak Entry invalidated", MONO_COUNTER_GC | MONO_COUNTER_ULONG, &stat_entry_invalidated);
+	sgen_client_counter_register_uint64 ("FinWeak Successes", &stat_success);
+	sgen_client_counter_register_uint64 ("FinWeak Overflow aborts", &stat_overflow_abort);
+	sgen_client_counter_register_uint64 ("FinWeak Wait for processing", &stat_wait_for_processing);
+	sgen_client_counter_register_uint64 ("FinWeak Increment other thread", &stat_increment_other_thread);
+	sgen_client_counter_register_uint64 ("FinWeak Index decremented", &stat_index_decremented);
+	sgen_client_counter_register_uint64 ("FinWeak Entry invalidated", &stat_entry_invalidated);
 #endif
 }
 

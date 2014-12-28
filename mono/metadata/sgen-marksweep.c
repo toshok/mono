@@ -28,7 +28,6 @@
 #include <math.h>
 #include <errno.h>
 
-#include "utils/mono-counters.h"
 #include "utils/mono-semaphore.h"
 #include "utils/mono-time.h"
 
@@ -1905,15 +1904,15 @@ sgen_marksweep_init_internal (SgenMajorCollector *collector, gboolean is_concurr
 	for (i = 0; i < MS_NUM_FAST_BLOCK_OBJ_SIZE_INDEXES * 8; ++i)
 		g_assert (MS_BLOCK_OBJ_SIZE_INDEX (i) == ms_find_block_obj_size_index (i));
 
-	mono_counters_register ("# major blocks allocated", MONO_COUNTER_GC | MONO_COUNTER_ULONG, &stat_major_blocks_alloced);
-	mono_counters_register ("# major blocks freed", MONO_COUNTER_GC | MONO_COUNTER_ULONG, &stat_major_blocks_freed);
-	mono_counters_register ("# major blocks lazy swept", MONO_COUNTER_GC | MONO_COUNTER_ULONG, &stat_major_blocks_lazy_swept);
-	mono_counters_register ("# major objects evacuated", MONO_COUNTER_GC | MONO_COUNTER_ULONG, &stat_major_objects_evacuated);
+	sgen_client_counter_register_uint64 ("# major blocks allocated", &stat_major_blocks_alloced);
+	sgen_client_counter_register_uint64 ("# major blocks freed", &stat_major_blocks_freed);
+	sgen_client_counter_register_uint64 ("# major blocks lazy swept", &stat_major_blocks_lazy_swept);
+	sgen_client_counter_register_uint64 ("# major objects evacuated", &stat_major_objects_evacuated);
 #if SIZEOF_VOID_P != 8
-	mono_counters_register ("# major blocks freed ideally", MONO_COUNTER_GC | MONO_COUNTER_ULONG, &stat_major_blocks_freed_ideal);
-	mono_counters_register ("# major blocks freed less ideally", MONO_COUNTER_GC | MONO_COUNTER_ULONG, &stat_major_blocks_freed_less_ideal);
-	mono_counters_register ("# major blocks freed individually", MONO_COUNTER_GC | MONO_COUNTER_ULONG, &stat_major_blocks_freed_individual);
-	mono_counters_register ("# major blocks allocated less ideally", MONO_COUNTER_GC | MONO_COUNTER_ULONG, &stat_major_blocks_alloced_less_ideal);
+	sgen_client_counter_register_uint64 ("# major blocks freed ideally", &stat_major_blocks_freed_ideal);
+	sgen_client_counter_register_uint64 ("# major blocks freed less ideally", &stat_major_blocks_freed_less_ideal);
+	sgen_client_counter_register_uint64 ("# major blocks freed individually", &stat_major_blocks_freed_individual);
+	sgen_client_counter_register_uint64 ("# major blocks allocated less ideally", &stat_major_blocks_alloced_less_ideal);
 #endif
 
 	collector->section_size = MAJOR_SECTION_SIZE;
@@ -1984,20 +1983,20 @@ sgen_marksweep_init_internal (SgenMajorCollector *collector, gboolean is_concurr
 		collector->drain_gray_stack = drain_gray_stack;
 
 #ifdef HEAVY_STATISTICS
-	mono_counters_register ("Optimized copy", MONO_COUNTER_GC | MONO_COUNTER_ULONG, &stat_optimized_copy);
-	mono_counters_register ("Optimized copy nursery", MONO_COUNTER_GC | MONO_COUNTER_ULONG, &stat_optimized_copy_nursery);
-	mono_counters_register ("Optimized copy nursery forwarded", MONO_COUNTER_GC | MONO_COUNTER_ULONG, &stat_optimized_copy_nursery_forwarded);
-	mono_counters_register ("Optimized copy nursery pinned", MONO_COUNTER_GC | MONO_COUNTER_ULONG, &stat_optimized_copy_nursery_pinned);
-	mono_counters_register ("Optimized copy major", MONO_COUNTER_GC | MONO_COUNTER_ULONG, &stat_optimized_copy_major);
-	mono_counters_register ("Optimized copy major small fast", MONO_COUNTER_GC | MONO_COUNTER_ULONG, &stat_optimized_copy_major_small_fast);
-	mono_counters_register ("Optimized copy major small slow", MONO_COUNTER_GC | MONO_COUNTER_ULONG, &stat_optimized_copy_major_small_slow);
-	mono_counters_register ("Optimized copy major large", MONO_COUNTER_GC | MONO_COUNTER_ULONG, &stat_optimized_copy_major_large);
-	mono_counters_register ("Optimized major scan", MONO_COUNTER_GC | MONO_COUNTER_ULONG, &stat_optimized_major_scan);
-	mono_counters_register ("Optimized major scan no refs", MONO_COUNTER_GC | MONO_COUNTER_ULONG, &stat_optimized_major_scan_no_refs);
+	sgen_client_counter_register_uint64 ("Optimized copy", &stat_optimized_copy);
+	sgen_client_counter_register_uint64 ("Optimized copy nursery", &stat_optimized_copy_nursery);
+	sgen_client_counter_register_uint64 ("Optimized copy nursery forwarded", &stat_optimized_copy_nursery_forwarded);
+	sgen_client_counter_register_uint64 ("Optimized copy nursery pinned", &stat_optimized_copy_nursery_pinned);
+	sgen_client_counter_register_uint64 ("Optimized copy major", &stat_optimized_copy_major);
+	sgen_client_counter_register_uint64 ("Optimized copy major small fast", &stat_optimized_copy_major_small_fast);
+	sgen_client_counter_register_uint64 ("Optimized copy major small slow", &stat_optimized_copy_major_small_slow);
+	sgen_client_counter_register_uint64 ("Optimized copy major large", &stat_optimized_copy_major_large);
+	sgen_client_counter_register_uint64 ("Optimized major scan", &stat_optimized_major_scan);
+	sgen_client_counter_register_uint64 ("Optimized major scan no refs", &stat_optimized_major_scan_no_refs);
 
-	mono_counters_register ("Gray stack drain loops", MONO_COUNTER_GC | MONO_COUNTER_ULONG, &stat_drain_loops);
-	mono_counters_register ("Gray stack prefetch fills", MONO_COUNTER_GC | MONO_COUNTER_ULONG, &stat_drain_prefetch_fills);
-	mono_counters_register ("Gray stack prefetch failures", MONO_COUNTER_GC | MONO_COUNTER_ULONG, &stat_drain_prefetch_fill_failures);
+	sgen_client_counter_register_uint64 ("Gray stack drain loops", &stat_drain_loops);
+	sgen_client_counter_register_uint64 ("Gray stack prefetch fills", &stat_drain_prefetch_fills);
+	sgen_client_counter_register_uint64 ("Gray stack prefetch failures", &stat_drain_prefetch_fill_failures);
 #endif
 #endif
 

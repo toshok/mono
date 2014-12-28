@@ -32,7 +32,6 @@
 #include "metadata/sgen-memory-governor.h"
 #include "metadata/sgen-client.h"
 #include "utils/mono-time.h"
-#include "utils/mono-counters.h"
 
 #define TV_DECLARE SGEN_TV_DECLARE
 #define TV_GETTIME SGEN_TV_GETTIME
@@ -285,8 +284,8 @@ sgen_client_restart_world (int generation, GGTimingInfo *timing)
 void
 mono_sgen_init_stw (void)
 {
-	mono_counters_register ("World stop", MONO_COUNTER_GC | MONO_COUNTER_ULONG | MONO_COUNTER_TIME, &time_stop_world);
-	mono_counters_register ("World restart", MONO_COUNTER_GC | MONO_COUNTER_ULONG | MONO_COUNTER_TIME, &time_restart_world);
+	sgen_client_counter_register_time ("World stop", &time_stop_world, FALSE);
+	sgen_client_counter_register_time ("World restart", &time_restart_world, FALSE);
 }
 
 #endif

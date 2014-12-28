@@ -19,6 +19,7 @@
 
 #include <metadata/sgen-pointer-queue.h>
 
+void sgen_client_init_early (void);
 void sgen_client_init (void);
 
 mword sgen_client_slow_object_get_size (GCVTable *vtable, GCObject* o);
@@ -80,6 +81,8 @@ void sgen_client_pinned_los_object (char *obj);
 void sgen_client_collecting_major_2 (void);
 void sgen_client_collecting_major_3 (SgenPointerQueue *fin_ready_queue, SgenPointerQueue *critical_fin_queue);
 
+void sgen_client_total_allocated_heap (mword allocated_heap);
+
 /*
  * If the client has registered any internal memory types, this must return a string
  * describing the given type.  Only used for debugging.
@@ -122,3 +125,7 @@ void sgen_client_protocol_copy (gpointer from, gpointer to, gpointer vtable, siz
 void sgen_client_protocol_global_remset (gpointer ptr, gpointer value, gpointer value_vtable);
 void sgen_client_protocol_dislink_update (gpointer link, gpointer obj, gboolean track, gboolean staged);
 void sgen_client_protocol_empty (gpointer start, size_t size);
+
+void sgen_client_counter_register_time (const char *name, guint64 *value, gboolean monotonic);
+void sgen_client_counter_register_uint64 (const char *name, guint64 *value);
+void sgen_client_counter_register_byte_count (const char *name, mword *value, gboolean monotonic);

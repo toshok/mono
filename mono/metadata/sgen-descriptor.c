@@ -42,7 +42,6 @@
 #define _XOPEN_SOURCE
 #endif
 
-#include "utils/mono-counters.h"
 #include "metadata/sgen-gc.h"
 
 #define MAX_USER_DESCRIPTORS 16
@@ -356,21 +355,21 @@ void
 sgen_init_descriptors (void)
 {
 #ifdef HEAVY_STATISTICS
-	mono_counters_register ("# scanned RUN_LENGTH", MONO_COUNTER_GC | MONO_COUNTER_ULONG, &stat_scanned_count_per_descriptor [DESC_TYPE_RUN_LENGTH - 1]);
-	mono_counters_register ("# scanned SMALL_PTRFREE", MONO_COUNTER_GC | MONO_COUNTER_ULONG, &stat_scanned_count_per_descriptor [DESC_TYPE_SMALL_PTRFREE - 1]);
-	mono_counters_register ("# scanned COMPLEX", MONO_COUNTER_GC | MONO_COUNTER_ULONG, &stat_scanned_count_per_descriptor [DESC_TYPE_COMPLEX - 1]);
-	mono_counters_register ("# scanned VECTOR", MONO_COUNTER_GC | MONO_COUNTER_ULONG, &stat_scanned_count_per_descriptor [DESC_TYPE_VECTOR - 1]);
-	mono_counters_register ("# scanned BITMAP", MONO_COUNTER_GC | MONO_COUNTER_ULONG, &stat_scanned_count_per_descriptor [DESC_TYPE_BITMAP - 1]);
-	mono_counters_register ("# scanned COMPLEX_ARR", MONO_COUNTER_GC | MONO_COUNTER_ULONG, &stat_scanned_count_per_descriptor [DESC_TYPE_COMPLEX_ARR - 1]);
-	mono_counters_register ("# scanned COMPLEX_PTRFREE", MONO_COUNTER_GC | MONO_COUNTER_ULONG, &stat_scanned_count_per_descriptor [DESC_TYPE_COMPLEX_PTRFREE - 1]);
+	sgen_client_counter_register_uint64 ("# scanned RUN_LENGTH", &stat_scanned_count_per_descriptor [DESC_TYPE_RUN_LENGTH - 1]);
+	sgen_client_counter_register_uint64 ("# scanned SMALL_PTRFREE", &stat_scanned_count_per_descriptor [DESC_TYPE_SMALL_PTRFREE - 1]);
+	sgen_client_counter_register_uint64 ("# scanned COMPLEX", &stat_scanned_count_per_descriptor [DESC_TYPE_COMPLEX - 1]);
+	sgen_client_counter_register_uint64 ("# scanned VECTOR", &stat_scanned_count_per_descriptor [DESC_TYPE_VECTOR - 1]);
+	sgen_client_counter_register_uint64 ("# scanned BITMAP", &stat_scanned_count_per_descriptor [DESC_TYPE_BITMAP - 1]);
+	sgen_client_counter_register_uint64 ("# scanned COMPLEX_ARR", &stat_scanned_count_per_descriptor [DESC_TYPE_COMPLEX_ARR - 1]);
+	sgen_client_counter_register_uint64 ("# scanned COMPLEX_PTRFREE", &stat_scanned_count_per_descriptor [DESC_TYPE_COMPLEX_PTRFREE - 1]);
 
-	mono_counters_register ("# copied RUN_LENGTH", MONO_COUNTER_GC | MONO_COUNTER_ULONG, &stat_copied_count_per_descriptor [DESC_TYPE_RUN_LENGTH - 1]);
-	mono_counters_register ("# copied SMALL_PTRFREE", MONO_COUNTER_GC | MONO_COUNTER_ULONG, &stat_copied_count_per_descriptor [DESC_TYPE_SMALL_PTRFREE - 1]);
-	mono_counters_register ("# copied COMPLEX", MONO_COUNTER_GC | MONO_COUNTER_ULONG, &stat_copied_count_per_descriptor [DESC_TYPE_COMPLEX - 1]);
-	mono_counters_register ("# copied VECTOR", MONO_COUNTER_GC | MONO_COUNTER_ULONG, &stat_copied_count_per_descriptor [DESC_TYPE_VECTOR - 1]);
-	mono_counters_register ("# copied BITMAP", MONO_COUNTER_GC | MONO_COUNTER_ULONG, &stat_copied_count_per_descriptor [DESC_TYPE_BITMAP - 1]);
-	mono_counters_register ("# copied COMPLEX_ARR", MONO_COUNTER_GC | MONO_COUNTER_ULONG, &stat_copied_count_per_descriptor [DESC_TYPE_COMPLEX_ARR - 1]);
-	mono_counters_register ("# copied COMPLEX_PTRFREE", MONO_COUNTER_GC | MONO_COUNTER_ULONG, &stat_copied_count_per_descriptor [DESC_TYPE_COMPLEX_PTRFREE - 1]);
+	sgen_client_counter_register_uint64 ("# copied RUN_LENGTH", &stat_copied_count_per_descriptor [DESC_TYPE_RUN_LENGTH - 1]);
+	sgen_client_counter_register_uint64 ("# copied SMALL_PTRFREE", &stat_copied_count_per_descriptor [DESC_TYPE_SMALL_PTRFREE - 1]);
+	sgen_client_counter_register_uint64 ("# copied COMPLEX", &stat_copied_count_per_descriptor [DESC_TYPE_COMPLEX - 1]);
+	sgen_client_counter_register_uint64 ("# copied VECTOR", &stat_copied_count_per_descriptor [DESC_TYPE_VECTOR - 1]);
+	sgen_client_counter_register_uint64 ("# copied BITMAP", &stat_copied_count_per_descriptor [DESC_TYPE_BITMAP - 1]);
+	sgen_client_counter_register_uint64 ("# copied COMPLEX_ARR", &stat_copied_count_per_descriptor [DESC_TYPE_COMPLEX_ARR - 1]);
+	sgen_client_counter_register_uint64 ("# copied COMPLEX_PTRFREE", &stat_copied_count_per_descriptor [DESC_TYPE_COMPLEX_PTRFREE - 1]);
 #endif
 }
 

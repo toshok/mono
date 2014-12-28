@@ -32,6 +32,7 @@
 #include "metadata/mono-gc.h"
 #include "metadata/runtime.h"
 #include "utils/mono-memory-model.h"
+#include "utils/mono-counters.h"
 
 /* If set, check that there are no references to the domain left at domain unload */
 gboolean sgen_mono_xdomain_checks = FALSE;
@@ -1967,6 +1968,34 @@ sgen_thread_detach (SgenThreadInfo *p)
 }
 
 /*
+ * Counters
+ */
+
+void
+sgen_client_counter_register_time (const char *name, guint64 *value, gboolean monotonic)
+{
+	mono_counters_register (name, MONO_COUNTER_GC | MONO_COUNTER_ULONG | MONO_COUNTER_TIME | (monotonic ? MONO_COUNTER_MONOTONIC : 0), value);
+}
+
+void
+sgen_client_counter_register_uint64 (const char *name, guint64 *value)
+{
+	mono_counters_register (name, MONO_COUNTER_GC | MONO_COUNTER_ULONG, value);
+}
+
+void
+sgen_client_counter_register_byte_count (const char *name, mword *value, gboolean monotonic)
+{
+	mono_counters_register (name, MONO_COUNTER_GC | MONO_COUNTER_WORD | MONO_COUNTER_BYTES | (monotonic ? MONO_COUNTER_MONOTONIC : MONO_COUNTER_VARIABLE), value);
+}
+
+void
+sgen_client_total_allocated_heap (mword allocated_heap)
+{
+	mono_runtime_resource_check_limit (MONO_RESOURCE_GC_HEAP, allocated_heap);
+}
+
+/*
  * Miscellaneous
  */
 
@@ -2090,6 +2119,12 @@ mono_gc_get_logfile (void)
 /*
  * Initialization
  */
+
+void
+sgen_client_init_early (void)
+{
+	mono_counters_init ();
+}
 
 void
 sgen_client_init (void)

@@ -32,7 +32,6 @@
 #include "metadata/sgen-protocol.h"
 #include "metadata/sgen-layout-stats.h"
 #include "metadata/sgen-client.h"
-#include "utils/mono-counters.h"
 #include "utils/mono-time.h"
 #include "utils/mono-memory-model.h"
 
@@ -577,19 +576,19 @@ sgen_card_table_init (SgenRemeberedSet *remset)
 #endif
 
 #ifdef HEAVY_STATISTICS
-	mono_counters_register ("marked cards", MONO_COUNTER_GC | MONO_COUNTER_ULONG, &marked_cards);
-	mono_counters_register ("scanned cards", MONO_COUNTER_GC | MONO_COUNTER_ULONG, &scanned_cards);
-	mono_counters_register ("remarked cards", MONO_COUNTER_GC | MONO_COUNTER_ULONG, &remarked_cards);
+	sgen_client_counter_register_uint64 ("marked cards", &marked_cards);
+	sgen_client_counter_register_uint64 ("scanned cards", &scanned_cards);
+	sgen_client_counter_register_uint64 ("remarked cards", &remarked_cards);
 
-	mono_counters_register ("los marked cards", MONO_COUNTER_GC | MONO_COUNTER_ULONG, &los_marked_cards);
-	mono_counters_register ("los array cards scanned ", MONO_COUNTER_GC | MONO_COUNTER_ULONG, &los_array_cards);
-	mono_counters_register ("los array remsets", MONO_COUNTER_GC | MONO_COUNTER_ULONG, &los_array_remsets);
-	mono_counters_register ("cardtable scanned objects", MONO_COUNTER_GC | MONO_COUNTER_ULONG, &scanned_objects);
-	mono_counters_register ("cardtable large objects", MONO_COUNTER_GC | MONO_COUNTER_ULONG, &large_objects);
-	mono_counters_register ("cardtable bloby objects", MONO_COUNTER_GC | MONO_COUNTER_ULONG, &bloby_objects);
+	sgen_client_counter_register_uint64 ("los marked cards", &los_marked_cards);
+	sgen_client_counter_register_uint64 ("los array cards scanned ", &los_array_cards);
+	sgen_client_counter_register_uint64 ("los array remsets", &los_array_remsets);
+	sgen_client_counter_register_uint64 ("cardtable scanned objects", &scanned_objects);
+	sgen_client_counter_register_uint64 ("cardtable large objects", &large_objects);
+	sgen_client_counter_register_uint64 ("cardtable bloby objects", &bloby_objects);
 #endif
-	mono_counters_register ("cardtable major scan time", MONO_COUNTER_GC | MONO_COUNTER_ULONG | MONO_COUNTER_TIME, &major_card_scan_time);
-	mono_counters_register ("cardtable los scan time", MONO_COUNTER_GC | MONO_COUNTER_ULONG | MONO_COUNTER_TIME, &los_card_scan_time);
+	sgen_client_counter_register_time ("cardtable major scan time", &major_card_scan_time, FALSE);
+	sgen_client_counter_register_time ("cardtable los scan time", &los_card_scan_time, FALSE);
 
 
 	remset->wbarrier_set_field = sgen_card_table_wbarrier_set_field;
