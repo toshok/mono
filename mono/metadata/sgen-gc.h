@@ -462,8 +462,6 @@ void sgen_dump_internal_mem_usage (FILE *heap_dump_file) MONO_INTERNAL;
 void sgen_dump_section (GCMemSection *section, const char *type) MONO_INTERNAL;
 void sgen_dump_occupied (char *start, char *end, char *section_start) MONO_INTERNAL;
 
-void sgen_register_moved_object (void *obj, void *destination) MONO_INTERNAL;
-
 void sgen_register_fixed_internal_mem_type (int type, size_t size) MONO_INTERNAL;
 
 void* sgen_alloc_internal (int type) MONO_INTERNAL;
@@ -836,7 +834,6 @@ void sgen_null_links_with_predicate (int generation, WeakLinkAlivePredicateFunc 
 gboolean sgen_gc_is_object_ready_for_finalization (void *object) MONO_INTERNAL;
 void sgen_gc_lock (void) MONO_INTERNAL;
 void sgen_gc_unlock (void) MONO_INTERNAL;
-void sgen_gc_event_moves (void) MONO_INTERNAL;
 
 void sgen_queue_finalization_entry (GCObject *obj) MONO_INTERNAL;
 const char* sgen_generation_name (int generation) MONO_INTERNAL;

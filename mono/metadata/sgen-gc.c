@@ -434,10 +434,6 @@ static MonoGCCallbacks gc_callbacks;
 
 #define ALIGN_UP		SGEN_ALIGN_UP
 
-#define MOVED_OBJECTS_NUM 64
-static void *moved_objects [MOVED_OBJECTS_NUM];
-static int moved_objects_idx = 0;
-
 #ifdef SGEN_DEBUG_INTERNAL_ALLOC
 MonoNativeThreadId main_gc_thread = NULL;
 #endif
@@ -1350,19 +1346,6 @@ scan_from_registered_roots (char *addr_start, char *addr_end, int root_type, Sca
 	SGEN_HASH_TABLE_FOREACH (&roots_hash [root_type], start_root, root) {
 		precisely_scan_objects_from (start_root, (void**)root->end_root, addr_start, addr_end, root->root_desc, ctx);
 	} SGEN_HASH_TABLE_FOREACH_END;
-}
-
-void
-sgen_register_moved_object (void *obj, void *destination)
-{
-	g_assert (mono_profiler_events & MONO_PROFILE_GC_MOVES);
-
-	if (moved_objects_idx == MOVED_OBJECTS_NUM) {
-		mono_profiler_gc_moves (moved_objects, moved_objects_idx);
-		moved_objects_idx = 0;
-	}
-	moved_objects [moved_objects_idx++] = obj;
-	moved_objects [moved_objects_idx++] = destination;
 }
 
 static void
@@ -3899,10 +3882,6 @@ sgen_restart_world (int generation, GGTimingInfo *timing)
 	int count;
 	long long major_total = -1, major_marked = -1, los_total = -1, los_marked = -1;
 
-	/* notify the profiler of the leftovers */
-	/* FIXME this is the wrong spot at we can STW for non collection reasons. */
-	if (G_UNLIKELY (mono_profiler_events & MONO_PROFILE_GC_MOVES))
-		sgen_gc_event_moves ();
 	mono_profiler_gc_event (MONO_GC_EVENT_PRE_START_WORLD, generation);
 
 	if (binary_protocol_is_heavy_enabled ())
@@ -3931,15 +3910,6 @@ sgen_check_whole_heap_stw (void)
 	sgen_clear_nursery_fragments ();
 	sgen_check_whole_heap (FALSE);
 	sgen_restart_world (0, NULL);
-}
-
-void
-sgen_gc_event_moves (void)
-{
-	if (moved_objects_idx) {
-		mono_profiler_gc_moves (moved_objects, moved_objects_idx);
-		moved_objects_idx = 0;
-	}
 }
 
 gint64

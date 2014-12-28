@@ -1835,6 +1835,32 @@ sgen_client_collecting_major_3 (SgenPointerQueue *fin_ready_queue, SgenPointerQu
 		report_finalizer_roots (fin_ready_queue, critical_fin_queue);
 }
 
+#define MOVED_OBJECTS_NUM 64
+static void *moved_objects [MOVED_OBJECTS_NUM];
+static int moved_objects_idx = 0;
+
+void
+mono_sgen_register_moved_object (void *obj, void *destination)
+{
+	g_assert (mono_profiler_events & MONO_PROFILE_GC_MOVES);
+
+	if (moved_objects_idx == MOVED_OBJECTS_NUM) {
+		mono_profiler_gc_moves (moved_objects, moved_objects_idx);
+		moved_objects_idx = 0;
+	}
+	moved_objects [moved_objects_idx++] = obj;
+	moved_objects [moved_objects_idx++] = destination;
+}
+
+void
+mono_sgen_gc_event_moves (void)
+{
+	if (moved_objects_idx) {
+		mono_profiler_gc_moves (moved_objects, moved_objects_idx);
+		moved_objects_idx = 0;
+	}
+}
+
 /*
  * Heap walking
  */
