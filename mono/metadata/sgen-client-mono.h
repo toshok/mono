@@ -208,12 +208,16 @@ static void
 sgen_client_protocol_collection_begin (int minor_gc_count, int generation)
 {
 	MONO_GC_BEGIN (generation);
+
+	mono_profiler_gc_event (MONO_GC_EVENT_START, generation);
 }
 
 static void
 sgen_client_protocol_collection_end (int minor_gc_count, int generation, long long num_objects_scanned, long long num_unique_objects_scanned)
 {
 	MONO_GC_END (generation);
+
+	mono_profiler_gc_event (MONO_GC_EVENT_END, generation);
 }
 
 static void
@@ -235,27 +239,59 @@ sgen_client_protocol_concurrent_finish (void)
 }
 
 static void
-sgen_client_protocol_world_stopping (void)
+sgen_client_protocol_world_stopping (int generation)
 {
 	MONO_GC_WORLD_STOP_BEGIN ();
+
+	mono_profiler_gc_event (MONO_GC_EVENT_PRE_STOP_WORLD, generation);
 }
 
 static void
-sgen_client_protocol_world_stopped (void)
+sgen_client_protocol_world_stopped (int generation)
 {
 	MONO_GC_WORLD_STOP_END ();
+
+	mono_profiler_gc_event (MONO_GC_EVENT_POST_STOP_WORLD, generation);
 }
 
 static void
 sgen_client_protocol_world_restarting (int generation)
 {
 	MONO_GC_WORLD_RESTART_BEGIN (generation);
+
+	mono_profiler_gc_event (MONO_GC_EVENT_PRE_START_WORLD, generation);
 }
 
 static void
 sgen_client_protocol_world_restarted (int generation)
 {
 	MONO_GC_WORLD_RESTART_END (generation);
+
+	mono_profiler_gc_event (MONO_GC_EVENT_POST_START_WORLD, generation);
+}
+
+static void
+sgen_client_protocol_mark_start (int generation)
+{
+	mono_profiler_gc_event (MONO_GC_EVENT_MARK_START, generation);
+}
+
+static void
+sgen_client_protocol_mark_end (int generation)
+{
+	mono_profiler_gc_event (MONO_GC_EVENT_MARK_END, generation);
+}
+
+static void
+sgen_client_protocol_reclaim_start (int generation)
+{
+	mono_profiler_gc_event (MONO_GC_EVENT_RECLAIM_START, generation);
+}
+
+static void
+sgen_client_protocol_reclaim_end (int generation)
+{
+	mono_profiler_gc_event (MONO_GC_EVENT_RECLAIM_END, generation);
 }
 
 static void

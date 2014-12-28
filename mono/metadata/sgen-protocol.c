@@ -376,22 +376,22 @@ binary_protocol_concurrent_finish (void)
 }
 
 void
-binary_protocol_world_stopping (long long timestamp)
+binary_protocol_world_stopping (int generation, long long timestamp)
 {
 	SGenProtocolWorldStopping entry = { timestamp };
 	protocol_entry (SGEN_PROTOCOL_WORLD_STOPPING, &entry, sizeof (SGenProtocolWorldStopping));
 
-	sgen_client_protocol_world_stopping ();
+	sgen_client_protocol_world_stopping (generation);
 }
 
 void
-binary_protocol_world_stopped (long long timestamp, long long total_major_cards,
+binary_protocol_world_stopped (int generation, long long timestamp, long long total_major_cards,
 		long long marked_major_cards, long long total_los_cards, long long marked_los_cards)
 {
 	SGenProtocolWorldStopped entry = { timestamp, total_major_cards, marked_major_cards, total_los_cards, marked_los_cards };
 	protocol_entry (SGEN_PROTOCOL_WORLD_STOPPED, &entry, sizeof (SGenProtocolWorldStopped));
 
-	sgen_client_protocol_world_stopped ();
+	sgen_client_protocol_world_stopped (generation);
 }
 
 void

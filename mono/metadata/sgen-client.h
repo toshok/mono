@@ -106,10 +106,14 @@ void sgen_client_protocol_collection_end (int minor_gc_count, int generation, lo
 void sgen_client_protocol_concurrent_start (void);
 void sgen_client_protocol_concurrent_update (void);
 void sgen_client_protocol_concurrent_finish (void);
-void sgen_client_protocol_world_stopping (void);
-void sgen_client_protocol_world_stopped (void);
+void sgen_client_protocol_world_stopping (int generation);
+void sgen_client_protocol_world_stopped (int generation);
 void sgen_client_protocol_world_restarting (int generation);
 void sgen_client_protocol_world_restarted (int generation);
+void sgen_client_protocol_mark_start (int generation);
+void sgen_client_protocol_mark_end (int generation);
+void sgen_client_protocol_reclaim_start (int generation);
+void sgen_client_protocol_reclaim_end (int generation);
 void sgen_client_protocol_alloc (gpointer obj, gpointer vtable, size_t size, gboolean pinned);
 void sgen_client_protocol_alloc_degraded (gpointer obj, gpointer vtable, size_t size);
 void sgen_client_protocol_pin (gpointer obj, gpointer vtable, size_t size);
