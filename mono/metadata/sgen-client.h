@@ -94,3 +94,22 @@ void sgen_client_pre_collection_checks (void);
 
 gboolean sgen_client_handle_gc_debug (const char *opt);
 void sgen_client_print_gc_debug_usage (void);
+
+void sgen_client_protocol_collection_requested (int generation, size_t requested_size, gboolean force);
+void sgen_client_protocol_collection_begin (int minor_gc_count, int generation);
+void sgen_client_protocol_collection_end (int minor_gc_count, int generation, long long num_objects_scanned, long long num_unique_objects_scanned);
+void sgen_client_protocol_concurrent_start (void);
+void sgen_client_protocol_concurrent_update (void);
+void sgen_client_protocol_concurrent_finish (void);
+void sgen_client_protocol_world_stopping (void);
+void sgen_client_protocol_world_stopped (void);
+void sgen_client_protocol_world_restarting (int generation);
+void sgen_client_protocol_world_restarted (int generation);
+void sgen_client_protocol_alloc (gpointer obj, gpointer vtable, size_t size, gboolean pinned);
+void sgen_client_protocol_alloc_degraded (gpointer obj, gpointer vtable, size_t size);
+void sgen_client_protocol_pin (gpointer obj, gpointer vtable, size_t size);
+void sgen_client_protocol_cement (gpointer ptr, gpointer vtable, size_t size);
+void sgen_client_protocol_copy (gpointer from, gpointer to, gpointer vtable, size_t size);
+void sgen_client_protocol_global_remset (gpointer ptr, gpointer value, gpointer value_vtable);
+void sgen_client_protocol_dislink_update (gpointer link, gpointer obj, gboolean track, gboolean staged);
+void sgen_client_protocol_empty (gpointer start, size_t size);

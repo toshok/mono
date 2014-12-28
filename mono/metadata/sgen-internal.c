@@ -181,8 +181,6 @@ sgen_alloc_internal_dynamic (size_t size, int type, gboolean assert_on_failure)
 			sgen_assert_memory_alloc (NULL, size, description_for_type (type));
 		memset (p, 0, size);
 	}
-
-	MONO_GC_INTERNAL_ALLOC ((mword)p, size, type);
 	return p;
 }
 
@@ -196,8 +194,6 @@ sgen_free_internal_dynamic (void *addr, size_t size, int type)
 		sgen_free_os_memory (addr, size, SGEN_ALLOC_INTERNAL);
 	else
 		mono_lock_free_free (addr, block_size (size));
-
-	MONO_GC_INTERNAL_DEALLOC ((mword)addr, size, type);
 }
 
 void*
@@ -218,8 +214,6 @@ sgen_alloc_internal (int type)
 	p = mono_lock_free_alloc (&allocators [index]);
 	memset (p, 0, size);
 
-	MONO_GC_INTERNAL_ALLOC ((mword)p, size, type);
-
 	return p;
 }
 
@@ -235,11 +229,6 @@ sgen_free_internal (void *addr, int type)
 	g_assert (index >= 0 && index < NUM_ALLOCATORS);
 
 	mono_lock_free_free (addr, allocator_block_sizes [index]);
-
-	if (MONO_GC_INTERNAL_DEALLOC_ENABLED ()) {
-		int size G_GNUC_UNUSED = allocator_sizes [index];
-		MONO_GC_INTERNAL_DEALLOC ((mword)addr, size, type);
-	}
 }
 
 void

@@ -32,7 +32,6 @@
 #include "metadata/sgen-memory-governor.h"
 #include "metadata/profiler-private.h"
 #include "utils/mono-time.h"
-#include "utils/dtrace.h"
 #include "utils/mono-counters.h"
 
 #define TV_DECLARE SGEN_TV_DECLARE
@@ -209,9 +208,9 @@ sgen_stop_world (int generation)
 {
 	TV_DECLARE (end_handshake);
 	int count, dead;
+	long long major_total = -1, major_marked = -1, los_total = -1, los_marked = -1;
 
 	mono_profiler_gc_event (MONO_GC_EVENT_PRE_STOP_WORLD, generation);
-	MONO_GC_WORLD_STOP_BEGIN ();
 	binary_protocol_world_stopping (sgen_timestamp ());
 	acquire_gc_locks ();
 
@@ -229,13 +228,9 @@ sgen_stop_world (int generation)
 	count -= dead;
 
 	mono_profiler_gc_event (MONO_GC_EVENT_POST_STOP_WORLD, generation);
-	MONO_GC_WORLD_STOP_END ();
-	if (binary_protocol_is_enabled ()) {
-		long long major_total = -1, major_marked = -1, los_total = -1, los_marked = -1;
-		if (binary_protocol_is_heavy_enabled ())
-			count_cards (&major_total, &major_marked, &los_total, &los_marked);
-		binary_protocol_world_stopped (sgen_timestamp (), major_total, major_marked, los_total, los_marked);
-	}
+	if (binary_protocol_is_heavy_enabled ())
+		count_cards (&major_total, &major_marked, &los_total, &los_marked);
+	binary_protocol_world_stopped (sgen_timestamp (), major_total, major_marked, los_total, los_marked);
 
 	TV_GETTIME (end_handshake);
 	time_stop_world += TV_ELAPSED (stop_world_time, end_handshake);
@@ -257,20 +252,18 @@ sgen_restart_world (int generation, GGTimingInfo *timing)
 	TV_DECLARE (start_handshake);
 	TV_DECLARE (end_bridge);
 	unsigned long usec, bridge_usec;
-
-	if (binary_protocol_is_enabled ()) {
-		long long major_total = -1, major_marked = -1, los_total = -1, los_marked = -1;
-		if (binary_protocol_is_heavy_enabled ())
-			count_cards (&major_total, &major_marked, &los_total, &los_marked);
-		binary_protocol_world_restarting (generation, sgen_timestamp (), major_total, major_marked, los_total, los_marked);
-	}
+	long long major_total = -1, major_marked = -1, los_total = -1, los_marked = -1;
 
 	/* notify the profiler of the leftovers */
 	/* FIXME this is the wrong spot at we can STW for non collection reasons. */
 	if (G_UNLIKELY (mono_profiler_events & MONO_PROFILE_GC_MOVES))
 		sgen_gc_event_moves ();
 	mono_profiler_gc_event (MONO_GC_EVENT_PRE_START_WORLD, generation);
-	MONO_GC_WORLD_RESTART_BEGIN (generation);
+
+	if (binary_protocol_is_heavy_enabled ())
+		count_cards (&major_total, &major_marked, &los_total, &los_marked);
+	binary_protocol_world_restarting (generation, sgen_timestamp (), major_total, major_marked, los_total, los_marked);
+
 	FOREACH_THREAD (info) {
 		info->stack_start = NULL;
 #ifdef USE_MONO_CTX
@@ -287,7 +280,6 @@ sgen_restart_world (int generation, GGTimingInfo *timing)
 	usec = TV_ELAPSED (stop_world_time, end_sw);
 	max_pause_usec = MAX (usec, max_pause_usec);
 	mono_profiler_gc_event (MONO_GC_EVENT_POST_START_WORLD, generation);
-	MONO_GC_WORLD_RESTART_END (generation);
 	binary_protocol_world_restarted (generation, sgen_timestamp ());
 
 	/*

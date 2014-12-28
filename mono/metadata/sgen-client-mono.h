@@ -179,3 +179,95 @@ sgen_client_object_has_critical_finalizer (GCObject *obj)
 
 	return mono_class_has_parent_fast (class, mono_defaults.critical_finalizer_object);
 }
+
+#ifndef ENABLE_DTRACE
+static void
+sgen_client_protocol_collection_requested (int generation, size_t requested_size, gboolean force)
+{
+}
+
+static void
+sgen_client_protocol_collection_begin (int minor_gc_count, int generation)
+{
+}
+
+static void
+sgen_client_protocol_collection_end (int minor_gc_count, int generation, long long num_objects_scanned, long long num_unique_objects_scanned)
+{
+}
+
+static void
+sgen_client_protocol_concurrent_start (void)
+{
+}
+
+static void
+sgen_client_protocol_concurrent_update (void)
+{
+}
+
+static void
+sgen_client_protocol_concurrent_finish (void)
+{
+}
+
+static void
+sgen_client_protocol_world_stopping (void)
+{
+}
+
+static void
+sgen_client_protocol_world_stopped (void)
+{
+}
+
+static void
+sgen_client_protocol_world_restarting (void)
+{
+}
+
+static void
+sgen_client_protocol_world_restarted (void)
+{
+}
+
+static void
+sgen_client_protocol_alloc (gpointer obj, gpointer vtable, size_t size, gboolean pinned)
+{
+}
+
+static void
+sgen_client_protocol_alloc_degraded (gpointer obj, gpointer vtable, size_t size)
+{
+}
+
+static void
+sgen_client_protocol_pin (gpointer obj, gpointer vtable, size_t size)
+{
+}
+
+static void
+sgen_client_protocol_cement (gpointer ptr, gpointer vtable, size_t size)
+{
+}
+
+static void
+sgen_client_protocol_copy (gpointer from, gpointer to, gpointer vtable, size_t size)
+{
+}
+
+static void
+sgen_client_protocol_global_remset (gpointer ptr, gpointer value, gpointer value_vtable)
+{
+}
+
+static void
+sgen_client_protocol_dislink_update (gpointer link, gpointer obj, gboolean track, gboolean staged)
+{
+}
+
+static void
+sgen_client_protocol_empty (gpointer start, size_t size)
+{
+}
+#endif

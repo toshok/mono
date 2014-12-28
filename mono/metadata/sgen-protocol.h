@@ -26,12 +26,14 @@
 #include "sgen-gc.h"
 
 enum {
-	SGEN_PROTOCOL_COLLECTION_FORCE,
+	SGEN_PROTOCOL_COLLECTION_REQUESTED,
 	SGEN_PROTOCOL_COLLECTION_BEGIN,
 	SGEN_PROTOCOL_COLLECTION_END,
 	SGEN_PROTOCOL_CONCURRENT_START,
 	SGEN_PROTOCOL_CONCURRENT_UPDATE,
 	SGEN_PROTOCOL_CONCURRENT_FINISH,
+	SGEN_PROTOCOL_SWEEP_BEGIN,
+	SGEN_PROTOCOL_SWEEP_END,
 	SGEN_PROTOCOL_WORLD_STOPPING,
 	SGEN_PROTOCOL_WORLD_STOPPED,
 	SGEN_PROTOCOL_WORLD_RESTARTING,
@@ -70,7 +72,9 @@ enum {
 
 typedef struct {
 	int generation;
-} SGenProtocolCollectionForce;
+	size_t requested_size;
+	int force;
+} SGenProtocolCollectionRequested;
 
 typedef struct {
 	int index, generation;
@@ -81,6 +85,11 @@ typedef struct {
 	long long num_scanned_objects;
 	long long num_unique_scanned_objects;
 } SGenProtocolCollectionEnd;
+
+typedef struct {
+	int generation;
+	int full_sweep;
+} SGenProtocolSweep;
 
 typedef struct {
 	long long timestamp;
@@ -259,7 +268,7 @@ gboolean binary_protocol_is_enabled (void) MONO_INTERNAL;
 
 void binary_protocol_flush_buffers (gboolean force) MONO_INTERNAL;
 
-void binary_protocol_collection_force (int generation) MONO_INTERNAL;
+void binary_protocol_collection_requested (int generation, size_t requested_size, int force) MONO_INTERNAL;
 void binary_protocol_collection_begin (int index, int generation) MONO_INTERNAL;
 void binary_protocol_collection_end (int index, int generation, long long num_objects_scanned, long long num_unique_objects_scanned) MONO_INTERNAL;
 void binary_protocol_concurrent_start (void) MONO_INTERNAL;
@@ -315,23 +324,23 @@ void binary_protocol_gray_dequeue (gpointer queue, gpointer cursor, gpointer val
 
 #define binary_protocol_is_heavy_enabled()	FALSE
 
-#define binary_protocol_alloc(obj, vtable, size)
-#define binary_protocol_alloc_pinned(obj, vtable, size)
-#define binary_protocol_alloc_degraded(obj, vtable, size)
-#define binary_protocol_copy(from, to, vtable, size)
+#define binary_protocol_alloc(obj, vtable, size)				sgen_client_protocol_alloc (obj, vtable, size, FALSE)
+#define binary_protocol_alloc_pinned(obj, vtable, size)				sgen_client_protocol_alloc (obj, vtable, size, TRUE)
+#define binary_protocol_alloc_degraded(obj, vtable, size)			sgen_client_protocol_alloc_degraded (obj, vtable, size)
+#define binary_protocol_copy(from, to, vtable, size)				sgen_client_protocol_copy (from, to, vtable, size)
 #define binary_protocol_pin_stage(addr_ptr, addr)
-#define binary_protocol_pin(obj, vtable, size)
+#define binary_protocol_pin(obj, vtable, size)					sgen_client_protocol_pin (obj, vtable, size)
 #define binary_protocol_mark(obj, vtable, size)
 #define binary_protocol_scan_begin(obj, vtable, size)
 #define binary_protocol_scan_vtype_begin(obj, size)
 #define binary_protocol_scan_process_reference(obj, ptr, value)
 #define binary_protocol_wbarrier(ptr, value, value_vtable)
-#define binary_protocol_global_remset(ptr, value, value_vtable)
+#define binary_protocol_global_remset(ptr, value, value_vtable)			sgen_client_protocol_global_remset (ptr, value, value_vtable)
 #define binary_protocol_ptr_update(ptr, old_value, new_value, vtable, size)
 #define binary_protocol_cleanup(ptr, vtable, size)
-#define binary_protocol_empty(start, size)
+#define binary_protocol_empty(start, size)					sgen_client_protocol_empty (start, size)
 #define binary_protocol_card_scan(start, size)
-#define binary_protocol_dislink_update(link,obj,track,staged)
+#define binary_protocol_dislink_update(link,obj,track,staged)			sgen_client_protocol_dislink_update (link, obj, track, staged)
 #define binary_protocol_dislink_update_staged(link,obj,track,index)
 #define binary_protocol_dislink_process_staged(link,obj,index)
 #define binary_protocol_gray_enqueue(queue,cursor,value)

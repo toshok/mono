@@ -36,7 +36,6 @@ typedef struct _SgenThreadInfo SgenThreadInfo;
 #endif
 #include <mono/utils/mono-compiler.h>
 #include <mono/utils/mono-threads.h>
-#include <mono/utils/dtrace.h>
 /* FIXME: remove logging and don't include this */
 #include <mono/utils/mono-logger-internal.h>
 #include <mono/utils/atomic.h>
@@ -155,7 +154,6 @@ struct _GCMemSection {
 #define LOCK_INIT(name)	mono_mutex_init (&(name))
 #define LOCK_GC do {						\
 		mono_mutex_lock (&gc_mutex);			\
-		MONO_GC_LOCKED ();				\
 	} while (0)
 #define UNLOCK_GC do { sgen_gc_unlock (); } while (0)
 

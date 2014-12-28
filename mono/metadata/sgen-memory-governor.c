@@ -34,7 +34,6 @@
 #include "utils/mono-counters.h"
 #include "utils/mono-mmap.h"
 #include "utils/mono-logger-internal.h"
-#include "utils/dtrace.h"
 
 #define MIN_MINOR_COLLECTION_ALLOWANCE	((mword)(DEFAULT_NURSERY_SIZE * default_allowance_nursery_size_ratio))
 
@@ -286,8 +285,6 @@ sgen_alloc_os_memory (size_t size, SgenAllocFlags flags, const char *assert_desc
 	sgen_assert_memory_alloc (ptr, size, assert_description);
 	if (ptr) {
 		SGEN_ATOMIC_ADD_P (total_alloc, size);
-		if (flags & SGEN_ALLOC_HEAP)
-			MONO_GC_HEAP_ALLOC ((mword)ptr, size);
 		total_alloc_max = MAX (total_alloc_max, total_alloc);
 	}
 	return ptr;
@@ -305,8 +302,6 @@ sgen_alloc_os_memory_aligned (size_t size, mword alignment, SgenAllocFlags flags
 	sgen_assert_memory_alloc (ptr, size, assert_description);
 	if (ptr) {
 		SGEN_ATOMIC_ADD_P (total_alloc, size);
-		if (flags & SGEN_ALLOC_HEAP)
-			MONO_GC_HEAP_ALLOC ((mword)ptr, size);
 		total_alloc_max = MAX (total_alloc_max, total_alloc);
 	}
 	return ptr;
@@ -322,8 +317,6 @@ sgen_free_os_memory (void *addr, size_t size, SgenAllocFlags flags)
 
 	mono_vfree (addr, size);
 	SGEN_ATOMIC_ADD_P (total_alloc, -(gssize)size);
-	if (flags & SGEN_ALLOC_HEAP)
-		MONO_GC_HEAP_FREE ((mword)addr, size);
 	total_alloc_max = MAX (total_alloc_max, total_alloc);
 }
 

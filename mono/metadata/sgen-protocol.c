@@ -26,6 +26,7 @@
 #include "sgen-gc.h"
 #include "sgen-protocol.h"
 #include "sgen-memory-governor.h"
+#include "sgen-client.h"
 #include "utils/mono-mmap.h"
 #include "utils/mono-threads.h"
 
@@ -321,11 +322,13 @@ protocol_entry (unsigned char type, gpointer data, int size)
 }
 
 void
-binary_protocol_collection_force (int generation)
+binary_protocol_collection_requested (int generation, size_t requested_size, int force)
 {
-	SGenProtocolCollectionForce entry = { generation };
+	SGenProtocolCollectionRequested entry = { generation, requested_size, force };
 	binary_protocol_flush_buffers (FALSE);
-	protocol_entry (SGEN_PROTOCOL_COLLECTION_FORCE, &entry, sizeof (SGenProtocolCollectionForce));
+	protocol_entry (SGEN_PROTOCOL_COLLECTION_REQUESTED, &entry, sizeof (SGenProtocolCollectionRequested));
+
+	sgen_client_protocol_collection_requested (generation, requested_size, force);
 }
 
 void
@@ -334,6 +337,8 @@ binary_protocol_collection_begin (int index, int generation)
 	SGenProtocolCollectionBegin entry = { index, generation };
 	binary_protocol_flush_buffers (FALSE);
 	protocol_entry (SGEN_PROTOCOL_COLLECTION_BEGIN, &entry, sizeof (SGenProtocolCollectionBegin));
+
+	sgen_client_protocol_collection_begin (index, generation);
 }
 
 void
@@ -342,24 +347,32 @@ binary_protocol_collection_end (int index, int generation, long long num_objects
 	SGenProtocolCollectionEnd entry = { index, generation, num_objects_scanned, num_unique_objects_scanned };
 	binary_protocol_flush_buffers (FALSE);
 	protocol_entry (SGEN_PROTOCOL_COLLECTION_END, &entry, sizeof (SGenProtocolCollectionEnd));
+
+	sgen_client_protocol_collection_end (index, generation, num_objects_scanned, num_unique_objects_scanned);
 }
 
 void
 binary_protocol_concurrent_start (void)
 {
 	protocol_entry (SGEN_PROTOCOL_CONCURRENT_START, NULL, 0);
+
+	sgen_client_protocol_concurrent_start ();
 }
 
 void
 binary_protocol_concurrent_update (void)
 {
 	protocol_entry (SGEN_PROTOCOL_CONCURRENT_UPDATE, NULL, 0);
+
+	sgen_client_protocol_concurrent_update ();
 }
 
 void
 binary_protocol_concurrent_finish (void)
 {
 	protocol_entry (SGEN_PROTOCOL_CONCURRENT_FINISH, NULL, 0);
+
+	sgen_client_protocol_concurrent_finish ();
 }
 
 void
@@ -367,6 +380,8 @@ binary_protocol_world_stopping (long long timestamp)
 {
 	SGenProtocolWorldStopping entry = { timestamp };
 	protocol_entry (SGEN_PROTOCOL_WORLD_STOPPING, &entry, sizeof (SGenProtocolWorldStopping));
+
+	sgen_client_protocol_world_stopping ();
 }
 
 void
@@ -375,6 +390,8 @@ binary_protocol_world_stopped (long long timestamp, long long total_major_cards,
 {
 	SGenProtocolWorldStopped entry = { timestamp, total_major_cards, marked_major_cards, total_los_cards, marked_los_cards };
 	protocol_entry (SGEN_PROTOCOL_WORLD_STOPPED, &entry, sizeof (SGenProtocolWorldStopped));
+
+	sgen_client_protocol_world_stopped ();
 }
 
 void
@@ -383,6 +400,8 @@ binary_protocol_world_restarting (int generation, long long timestamp,
 {
 	SGenProtocolWorldRestarting entry = { generation, timestamp, total_major_cards, marked_major_cards, total_los_cards, marked_los_cards };
 	protocol_entry (SGEN_PROTOCOL_WORLD_RESTARTING, &entry, sizeof (SGenProtocolWorldRestarting));
+
+	sgen_client_protocol_world_restarting (generation);
 }
 
 void
@@ -390,6 +409,8 @@ binary_protocol_world_restarted (int generation, long long timestamp)
 {
 	SGenProtocolWorldRestarted entry = { generation, timestamp };
 	protocol_entry (SGEN_PROTOCOL_WORLD_RESTARTED, &entry, sizeof (SGenProtocolWorldRestarted));
+
+	sgen_client_protocol_world_restarted (generation);
 }
 
 void
@@ -463,6 +484,8 @@ binary_protocol_alloc (gpointer obj, gpointer vtable, int size)
 {
 	SGenProtocolAlloc entry = { obj, vtable, size };
 	protocol_entry (SGEN_PROTOCOL_ALLOC, &entry, sizeof (SGenProtocolAlloc));
+
+	sgen_client_protocol_alloc (obj, vtable, size, FALSE);
 }
 
 void
@@ -470,6 +493,8 @@ binary_protocol_alloc_pinned (gpointer obj, gpointer vtable, int size)
 {
 	SGenProtocolAlloc entry = { obj, vtable, size };
 	protocol_entry (SGEN_PROTOCOL_ALLOC_PINNED, &entry, sizeof (SGenProtocolAlloc));
+
+	sgen_client_protocol_alloc (obj, vtable, size, TRUE);
 }
 
 void
@@ -477,6 +502,8 @@ binary_protocol_alloc_degraded (gpointer obj, gpointer vtable, int size)
 {
 	SGenProtocolAlloc entry = { obj, vtable, size };
 	protocol_entry (SGEN_PROTOCOL_ALLOC_DEGRADED, &entry, sizeof (SGenProtocolAlloc));
+
+	sgen_client_protocol_alloc_degraded (obj, vtable, size);
 }
 
 void
@@ -484,6 +511,8 @@ binary_protocol_copy (gpointer from, gpointer to, gpointer vtable, int size)
 {
 	SGenProtocolCopy entry = { from, to, vtable, size };
 	protocol_entry (SGEN_PROTOCOL_COPY, &entry, sizeof (SGenProtocolCopy));
+
+	sgen_client_protocol_copy (from, to, vtable, size);
 }
 
 void
@@ -498,6 +527,8 @@ binary_protocol_pin (gpointer obj, gpointer vtable, int size)
 {
 	SGenProtocolPin entry = { obj, vtable, size };
 	protocol_entry (SGEN_PROTOCOL_PIN, &entry, sizeof (SGenProtocolPin));
+
+	sgen_client_protocol_pin (obj, vtable, size);
 }
 
 void
@@ -540,6 +571,8 @@ binary_protocol_global_remset (gpointer ptr, gpointer value, gpointer value_vtab
 {
 	SGenProtocolGlobalRemset entry = { ptr, value, value_vtable };
 	protocol_entry (SGEN_PROTOCOL_GLOBAL_REMSET, &entry, sizeof (SGenProtocolGlobalRemset));
+
+	sgen_client_protocol_global_remset (ptr, value, value_vtable);
 }
 
 void
@@ -561,6 +594,8 @@ binary_protocol_empty (gpointer start, int size)
 {
 	SGenProtocolEmpty entry = { start, size };
 	protocol_entry (SGEN_PROTOCOL_EMPTY, &entry, sizeof (SGenProtocolEmpty));
+
+	sgen_client_protocol_empty (start, size);
 }
 
 void
@@ -575,6 +610,8 @@ binary_protocol_dislink_update (gpointer link, gpointer obj, int track, int stag
 {
 	SGenProtocolDislinkUpdate entry = { link, obj, track, staged };
 	protocol_entry (SGEN_PROTOCOL_DISLINK_UPDATE, &entry, sizeof (SGenProtocolDislinkUpdate));
+
+	sgen_client_protocol_dislink_update (link, obj, track, staged);
 }
 
 void

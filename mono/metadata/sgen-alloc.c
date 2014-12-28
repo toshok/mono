@@ -119,12 +119,8 @@ alloc_degraded (GCVTable *vtable, size_t size, gboolean for_mature)
 
 	p = major_collector.alloc_degraded (vtable, size);
 
-	if (for_mature) {
-		MONO_GC_MAJOR_OBJ_ALLOC_MATURE ((mword)p, size, sgen_client_vtable_get_namespace (vtable), sgen_client_vtable_get_name (vtable));
-	} else {
+	if (!for_mature)
 		binary_protocol_alloc_degraded (p, vtable, size);
-		MONO_GC_MAJOR_OBJ_ALLOC_DEGRADED ((mword)p, size, sgen_client_vtable_get_namespace (vtable), sgen_client_vtable_get_name (vtable));
-	}
 
 	return p;
 }
@@ -228,8 +224,6 @@ sgen_alloc_obj_nolock (GCVTable *vtable, size_t size)
 
 			CANARIFY_ALLOC(p,real_size);
 			binary_protocol_alloc (p , vtable, size);
-			if (G_UNLIKELY (MONO_GC_NURSERY_OBJ_ALLOC_ENABLED ()))
-				MONO_GC_NURSERY_OBJ_ALLOC ((mword)p, size, sgen_client_vtable_get_namespace (vtable), sgen_client_vtable_get_name (vtable));
 			g_assert (*p == NULL);
 			mono_atomic_store_seq (p, vtable);
 
@@ -333,12 +327,6 @@ sgen_alloc_obj_nolock (GCVTable *vtable, size_t size)
 
 	if (G_LIKELY (p)) {
 		binary_protocol_alloc (p, vtable, size);
-		if (G_UNLIKELY (MONO_GC_MAJOR_OBJ_ALLOC_LARGE_ENABLED ()|| MONO_GC_NURSERY_OBJ_ALLOC_ENABLED ())) {
-			if (real_size > SGEN_MAX_SMALL_OBJ_SIZE)
-				MONO_GC_MAJOR_OBJ_ALLOC_LARGE ((mword)p, size, sgen_client_vtable_get_namespace (vtable), sgen_client_vtable_get_name (vtable));
-			else
-				MONO_GC_NURSERY_OBJ_ALLOC ((mword)p, size, sgen_client_vtable_get_namespace (vtable), sgen_client_vtable_get_name (vtable));
-		}
 		mono_atomic_store_seq (p, vtable);
 	}
 
@@ -416,8 +404,6 @@ sgen_try_alloc_obj_nolock (GCVTable *vtable, size_t size)
 			sgen_set_nursery_scan_start ((char*)p);
 
 			zero_tlab_if_necessary (new_next, alloc_size);
-
-			MONO_GC_NURSERY_TLAB_ALLOC ((mword)new_next, alloc_size);
 		}
 	}
 
@@ -426,8 +412,6 @@ sgen_try_alloc_obj_nolock (GCVTable *vtable, size_t size)
 
 	CANARIFY_ALLOC(p,real_size);
 	binary_protocol_alloc (p, vtable, size);
-	if (G_UNLIKELY (MONO_GC_NURSERY_OBJ_ALLOC_ENABLED ()))
-		MONO_GC_NURSERY_OBJ_ALLOC ((mword)p, size, sgen_client_vtable_get_namespace (vtable), sgen_client_vtable_get_name (vtable));
 	g_assert (*p == NULL); /* FIXME disable this in non debug builds */
 
 	mono_atomic_store_seq (p, vtable);
@@ -501,13 +485,8 @@ mono_gc_alloc_pinned_obj (MonoVTable *vtable, size_t size)
 		SGEN_ASSERT (9, vtable->klass->inited, "class %s:%s is not initialized", vtable->klass->name_space, vtable->klass->name);
 		p = major_collector.alloc_small_pinned_obj ((GCVTable*)vtable, size, SGEN_VTABLE_HAS_REFERENCES ((GCVTable*)vtable));
 	}
-	if (G_LIKELY (p)) {
-		if (size > SGEN_MAX_SMALL_OBJ_SIZE)
-			MONO_GC_MAJOR_OBJ_ALLOC_LARGE ((mword)p, size, vtable->klass->name_space, vtable->klass->name);
-		else
-			MONO_GC_MAJOR_OBJ_ALLOC_PINNED ((mword)p, size, vtable->klass->name_space, vtable->klass->name);
+	if (G_LIKELY (p))
 		binary_protocol_alloc_pinned (p, vtable, size);
-	}
 	UNLOCK_GC;
 	return p;
 }

@@ -22,12 +22,14 @@ read_entry (FILE *in, void **data)
 	if (fread (&type, 1, 1, in) != 1)
 		return SGEN_PROTOCOL_EOF;
 	switch (TYPE (type)) {
-	case SGEN_PROTOCOL_COLLECTION_FORCE: size = sizeof (SGenProtocolCollectionForce); break;
+	case SGEN_PROTOCOL_COLLECTION_REQUESTED: size = sizeof (SGenProtocolCollectionRequested); break;
 	case SGEN_PROTOCOL_COLLECTION_BEGIN: size = sizeof (SGenProtocolCollectionBegin); break;
 	case SGEN_PROTOCOL_COLLECTION_END: size = sizeof (SGenProtocolCollectionEnd); break;
 	case SGEN_PROTOCOL_CONCURRENT_START: size = 0; break;
 	case SGEN_PROTOCOL_CONCURRENT_UPDATE: size = 0; break;
 	case SGEN_PROTOCOL_CONCURRENT_FINISH: size = 0; break;
+	case SGEN_PROTOCOL_SWEEP_BEGIN: size = sizeof (SGenProtocolSweep); break;
+	case SGEN_PROTOCOL_SWEEP_END: size = sizeof (SGenProtocolSweep); break;
 	case SGEN_PROTOCOL_WORLD_STOPPING: size = sizeof (SGenProtocolWorldStopping); break;
 	case SGEN_PROTOCOL_WORLD_STOPPED: size = sizeof (SGenProtocolWorldStopped); break;
 	case SGEN_PROTOCOL_WORLD_RESTARTING: size = sizeof (SGenProtocolWorldRestarting); break;
@@ -80,12 +82,14 @@ static gboolean
 is_always_match (int type)
 {
 	switch (TYPE (type)) {
-	case SGEN_PROTOCOL_COLLECTION_FORCE:
+	case SGEN_PROTOCOL_COLLECTION_REQUESTED:
 	case SGEN_PROTOCOL_COLLECTION_BEGIN:
 	case SGEN_PROTOCOL_COLLECTION_END:
 	case SGEN_PROTOCOL_CONCURRENT_START:
 	case SGEN_PROTOCOL_CONCURRENT_UPDATE:
 	case SGEN_PROTOCOL_CONCURRENT_FINISH:
+	case SGEN_PROTOCOL_SWEEP_BEGIN:
+	case SGEN_PROTOCOL_SWEEP_END:
 	case SGEN_PROTOCOL_WORLD_STOPPING:
 	case SGEN_PROTOCOL_WORLD_STOPPED:
 	case SGEN_PROTOCOL_WORLD_RESTARTING:
@@ -112,9 +116,9 @@ print_entry (int type, void *data)
 	printf ("%s%s ", WORKER_PREFIX (type), always_prefix);
 
 	switch (TYPE (type)) {
-	case SGEN_PROTOCOL_COLLECTION_FORCE: {
-		SGenProtocolCollectionForce *entry = data;
-		printf ("collection force generation %d\n", entry->generation);
+	case SGEN_PROTOCOL_COLLECTION_REQUESTED: {
+		SGenProtocolCollectionRequested *entry = data;
+		printf ("collection requested generation %d size %zd force %d\n", entry->generation, entry->requested_size, entry->force);
 		break;
 	}
 	case SGEN_PROTOCOL_COLLECTION_BEGIN: {
@@ -139,6 +143,16 @@ print_entry (int type, void *data)
 	}
 	case SGEN_PROTOCOL_CONCURRENT_FINISH: {
 		printf ("concurrent finish\n");
+		break;
+	}
+	case SGEN_PROTOCOL_SWEEP_BEGIN: {
+		SGenProtocolSweep *entry = data;
+		printf ("sweep begin generation %d full %d\n", entry->generation, entry->full_sweep);
+		break;
+	}
+	case SGEN_PROTOCOL_SWEEP_END: {
+		SGenProtocolSweep *entry = data;
+		printf ("sweep end generation %d full %d\n", entry->generation, entry->full_sweep);
 		break;
 	}
 	case SGEN_PROTOCOL_WORLD_STOPPING: {
