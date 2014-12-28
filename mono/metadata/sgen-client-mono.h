@@ -271,3 +271,5 @@ sgen_client_protocol_empty (gpointer start, size_t size)
 {
 }
 #endif
+
+extern void mono_sgen_init_stw (void);
