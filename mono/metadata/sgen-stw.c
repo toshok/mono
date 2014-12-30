@@ -115,7 +115,7 @@ restart_threads_until_none_in_managed_allocator (void)
 		   allocator */
 		FOREACH_THREAD_SAFE (info) {
 			gboolean result;
-			if (info->client_info.skip || info->gc_disabled)
+			if (info->client_info.skip || info->client_info.gc_disabled)
 				continue;
 			if (mono_thread_info_run_state (info) == STATE_RUNNING &&
 					(!info->stack_start || info->client_info.in_critical_region || info->client_info.info.inside_critical_region ||

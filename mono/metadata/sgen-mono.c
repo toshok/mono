@@ -1960,6 +1960,16 @@ sgen_client_thread_register (SgenThreadInfo* info, void *stack_bottom_fallback)
 	info->client_info.stopped_domain = NULL;
 }
 
+void
+mono_gc_set_skip_thread (gboolean skip)
+{
+	SgenThreadInfo *info = mono_thread_info_current ();
+
+	LOCK_GC;
+	info->client_info.gc_disabled = skip;
+	UNLOCK_GC;
+}
+
 static gboolean
 is_critical_method (MonoMethod *method)
 {
@@ -2010,7 +2020,7 @@ sgen_client_scan_thread_data (void *start_nursery, void *end_nursery, gboolean p
 	FOREACH_THREAD (info) {
 		if (info->client_info.skip)
 			continue;
-		if (info->gc_disabled)
+		if (info->client_info.gc_disabled)
 			continue;
 		if (mono_thread_info_run_state (info) != STATE_RUNNING)
 			continue;
