@@ -318,6 +318,8 @@ void sgen_update_heap_boundaries (mword low, mword high) MONO_INTERNAL;
 void sgen_scan_area_with_callback (char *start, char *end, IterateObjectCallbackFunc callback, void *data, gboolean allow_flags) MONO_INTERNAL;
 void sgen_check_section_scan_starts (GCMemSection *section) MONO_INTERNAL;
 
+void sgen_conservatively_pin_objects_from (void **start, void **end, void *start_nursery, void *end_nursery, int pin_type) MONO_INTERNAL;
+
 /* Keep in sync with description_for_type() in sgen-internal.c! */
 enum {
 	INTERNAL_MEM_PIN_QUEUE,
@@ -442,6 +444,11 @@ typedef struct
 	CopyOrMarkObjectFunc copy_func;
 	SgenGrayQueue *queue;
 } ScanCopyContext;
+
+typedef struct {
+	CopyOrMarkObjectFunc func;
+	SgenGrayQueue *queue;
+} SgenUserCopyOrMarkData;
 
 void sgen_report_internal_mem_usage (void) MONO_INTERNAL;
 void sgen_dump_internal_mem_usage (FILE *heap_dump_file) MONO_INTERNAL;
