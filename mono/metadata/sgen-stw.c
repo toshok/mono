@@ -118,7 +118,7 @@ restart_threads_until_none_in_managed_allocator (void)
 			if (info->skip || info->gc_disabled)
 				continue;
 			if (mono_thread_info_run_state (info) == STATE_RUNNING && (!info->stack_start || info->in_critical_region || info->client_info.info.inside_critical_region ||
-					is_ip_in_managed_allocator (info->stopped_domain, info->stopped_ip))) {
+					is_ip_in_managed_allocator (info->client_info.stopped_domain, info->client_info.stopped_ip))) {
 				binary_protocol_thread_restart ((gpointer)mono_thread_info_get_tid (info));
 				result = sgen_resume_thread (info);
 				if (result) {
@@ -132,8 +132,8 @@ restart_threads_until_none_in_managed_allocator (void)
 				   we're not restarting so
 				   that we can easily identify
 				   the others */
-				info->stopped_ip = NULL;
-				info->stopped_domain = NULL;
+				info->client_info.stopped_ip = NULL;
+				info->client_info.stopped_domain = NULL;
 			}
 		} END_FOREACH_THREAD_SAFE
 		/* if no threads were restarted, we're done */
@@ -154,7 +154,7 @@ restart_threads_until_none_in_managed_allocator (void)
 		/* stop them again */
 		FOREACH_THREAD (info) {
 			gboolean result;
-			if (info->skip || info->stopped_ip == NULL)
+			if (info->skip || info->client_info.stopped_ip == NULL)
 				continue;
 			result = sgen_suspend_thread (info);
 
