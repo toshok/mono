@@ -115,16 +115,17 @@ restart_threads_until_none_in_managed_allocator (void)
 		   allocator */
 		FOREACH_THREAD_SAFE (info) {
 			gboolean result;
-			if (info->skip || info->gc_disabled)
+			if (info->client_info.skip || info->gc_disabled)
 				continue;
-			if (mono_thread_info_run_state (info) == STATE_RUNNING && (!info->stack_start || info->in_critical_region || info->client_info.info.inside_critical_region ||
+			if (mono_thread_info_run_state (info) == STATE_RUNNING &&
+					(!info->stack_start || info->client_info.in_critical_region || info->client_info.info.inside_critical_region ||
 					is_ip_in_managed_allocator (info->client_info.stopped_domain, info->client_info.stopped_ip))) {
 				binary_protocol_thread_restart ((gpointer)mono_thread_info_get_tid (info));
 				result = sgen_resume_thread (info);
 				if (result) {
 					++restart_count;
 				} else {
-					info->skip = 1;
+					info->client_info.skip = 1;
 				}
 			} else {
 				/* we set the stopped_ip to
@@ -154,14 +155,14 @@ restart_threads_until_none_in_managed_allocator (void)
 		/* stop them again */
 		FOREACH_THREAD (info) {
 			gboolean result;
-			if (info->skip || info->client_info.stopped_ip == NULL)
+			if (info->client_info.skip || info->client_info.stopped_ip == NULL)
 				continue;
 			result = sgen_suspend_thread (info);
 
 			if (result) {
 				++restarted_count;
 			} else {
-				info->skip = 1;
+				info->client_info.skip = 1;
 			}
 		} END_FOREACH_THREAD
 		/* some threads might have died */

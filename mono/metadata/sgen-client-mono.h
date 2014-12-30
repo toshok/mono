@@ -96,6 +96,13 @@ typedef struct _SgenClientThreadInfo SgenClientThreadInfo;
 struct _SgenClientThreadInfo {
 	MonoThreadInfo info;
 
+	/*
+	This is set to TRUE when STW fails to suspend a thread, most probably because the
+	underlying thread is dead.
+	*/
+	int skip;
+	volatile int in_critical_region;
+
 	gpointer stopped_ip;	/* only valid if the thread is stopped */
 	MonoDomain *stopped_domain; /* dsto */
 };
@@ -407,5 +414,31 @@ int sgen_thread_handshake (BOOL suspend) MONO_INTERNAL;
 gboolean sgen_suspend_thread (SgenThreadInfo *info) MONO_INTERNAL;
 gboolean sgen_resume_thread (SgenThreadInfo *info) MONO_INTERNAL;
 void sgen_wait_for_suspend_ack (int count) MONO_INTERNAL;
+
+#ifdef HAVE_KW_THREAD
+#define TLAB_ACCESS_INIT
+#define IN_CRITICAL_REGION sgen_thread_info->client_info.in_critical_region
+#else
+#define TLAB_ACCESS_INIT	SgenThreadInfo *__thread_info__ = mono_native_tls_get_value (thread_info_key)
+#define IN_CRITICAL_REGION (__thread_info__->client_info.in_critical_region)
+#endif
+
+#ifndef DISABLE_CRITICAL_REGION
+
+#ifdef HAVE_KW_THREAD
+#define IN_CRITICAL_REGION sgen_thread_info->client_info.in_critical_region
+#else
+#define IN_CRITICAL_REGION (__thread_info__->client_info.in_critical_region)
+#endif
+
+/* Enter must be visible before anything is done in the critical region. */
+#define ENTER_CRITICAL_REGION do { mono_atomic_store_acquire (&IN_CRITICAL_REGION, 1); } while (0)
+
+/* Exit must make sure all critical regions stores are visible before it signal the end of the region. 
+ * We don't need to emit a full barrier since we
+ */
+#define EXIT_CRITICAL_REGION  do { mono_atomic_store_release (&IN_CRITICAL_REGION, 0); } while (0)
+
+#endif
 
 #endif

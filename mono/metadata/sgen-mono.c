@@ -1955,6 +1955,7 @@ mono_gc_walk_heap (int flags, MonoGCReferences callback, void *data)
 void
 sgen_client_thread_register (SgenThreadInfo* info, void *stack_bottom_fallback)
 {
+	info->client_info.skip = 0;
 	info->client_info.stopped_ip = NULL;
 	info->client_info.stopped_domain = NULL;
 }
@@ -2007,7 +2008,7 @@ sgen_client_scan_thread_data (void *start_nursery, void *end_nursery, gboolean p
 	scan_area_arg_end = end_nursery;
 
 	FOREACH_THREAD (info) {
-		if (info->skip)
+		if (info->client_info.skip)
 			continue;
 		if (info->gc_disabled)
 			continue;
