@@ -117,7 +117,7 @@ restart_threads_until_none_in_managed_allocator (void)
 			gboolean result;
 			if (info->skip || info->gc_disabled)
 				continue;
-			if (mono_thread_info_run_state (info) == STATE_RUNNING && (!info->stack_start || info->in_critical_region || info->info.inside_critical_region ||
+			if (mono_thread_info_run_state (info) == STATE_RUNNING && (!info->stack_start || info->in_critical_region || info->client_info.info.inside_critical_region ||
 					is_ip_in_managed_allocator (info->stopped_domain, info->stopped_ip))) {
 				binary_protocol_thread_restart ((gpointer)mono_thread_info_get_tid (info));
 				result = sgen_resume_thread (info);

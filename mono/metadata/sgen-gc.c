@@ -2929,7 +2929,7 @@ sgen_thread_unregister (SgenThreadInfo *p)
 	sgen_thread_info = NULL;
 #endif
 
-	if (p->info.runtime_thread)
+	if (p->client_info.info.runtime_thread)
 		mono_threads_add_joinable_thread ((gpointer)tid);
 
 	if (gc_callbacks.thread_detach_func) {

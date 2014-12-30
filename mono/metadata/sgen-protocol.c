@@ -28,7 +28,6 @@
 #include "sgen-memory-governor.h"
 #include "sgen-client.h"
 #include "utils/mono-mmap.h"
-#include "utils/mono-threads.h"
 
 #include <errno.h>
 #ifdef HAVE_UNISTD_H
