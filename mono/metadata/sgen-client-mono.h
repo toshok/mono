@@ -133,6 +133,7 @@ struct _SgenClientThreadInfo {
 
 #include "metadata/profiler-private.h"
 #include "utils/dtrace.h"
+#include "utils/mono-time.h"
 
 extern void mono_sgen_register_moved_object (void *obj, void *destination);
 extern void mono_sgen_gc_event_moves (void);
@@ -462,5 +463,9 @@ void sgen_wait_for_suspend_ack (int count) MONO_INTERNAL;
 #define EXIT_CRITICAL_REGION  do { mono_atomic_store_release (&IN_CRITICAL_REGION, 0); } while (0)
 
 #endif
+
+#define SGEN_TV_DECLARE(name) gint64 name
+#define SGEN_TV_GETTIME(tv) tv = mono_100ns_ticks ()
+#define SGEN_TV_ELAPSED(start,end) (int)((end-start))
 
 #endif

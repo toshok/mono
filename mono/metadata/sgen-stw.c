@@ -31,7 +31,6 @@
 #include "metadata/sgen-protocol.h"
 #include "metadata/sgen-memory-governor.h"
 #include "metadata/sgen-client.h"
-#include "utils/mono-time.h"
 
 #define TV_DECLARE SGEN_TV_DECLARE
 #define TV_GETTIME SGEN_TV_GETTIME
