@@ -63,7 +63,7 @@ ptr_on_stack (void *ptr)
 	gpointer stack_start = &stack_start;
 	SgenThreadInfo *info = mono_thread_info_current ();
 
-	if (ptr >= stack_start && ptr < (gpointer)info->stack_end)
+	if (ptr >= stack_start && ptr < (gpointer)info->client_info.stack_end)
 		return TRUE;
 	return FALSE;
 }
@@ -1955,9 +1955,28 @@ mono_gc_walk_heap (int flags, MonoGCReferences callback, void *data)
 void
 sgen_client_thread_register (SgenThreadInfo* info, void *stack_bottom_fallback)
 {
+	size_t stsize = 0;
+	guint8 *staddr = NULL;
+
 	info->client_info.skip = 0;
 	info->client_info.stopped_ip = NULL;
 	info->client_info.stopped_domain = NULL;
+
+	info->client_info.stack_start = NULL;
+
+	/* On win32, stack_start_limit should be 0, since the stack can grow dynamically */
+	mono_thread_info_get_stack_bounds (&staddr, &stsize);
+	if (staddr) {
+#ifndef HOST_WIN32
+		info->client_info.stack_start_limit = staddr;
+#endif
+		info->client_info.stack_end = staddr + stsize;
+	} else {
+		gsize stack_bottom = (gsize)stack_bottom_fallback;
+		stack_bottom += 4095;
+		stack_bottom &= ~4095;
+		info->client_info.stack_end = (char*)stack_bottom;
+	}
 }
 
 void
@@ -2026,13 +2045,13 @@ sgen_client_scan_thread_data (void *start_nursery, void *end_nursery, gboolean p
 			continue;
 		if (mono_gc_get_gc_callbacks ()->thread_mark_func && !conservative_stack_mark) {
 			SgenUserCopyOrMarkData data = { NULL, queue };
-			mono_gc_get_gc_callbacks ()->thread_mark_func (info->runtime_data, info->stack_start, info->stack_end, precise, &data);
+			mono_gc_get_gc_callbacks ()->thread_mark_func (info->runtime_data, info->client_info.stack_start, info->client_info.stack_end, precise, &data);
 		} else if (!precise) {
 			if (!conservative_stack_mark) {
 				fprintf (stderr, "Precise stack mark not supported - disabling.\n");
 				conservative_stack_mark = TRUE;
 			}
-			sgen_conservatively_pin_objects_from (info->stack_start, info->stack_end, start_nursery, end_nursery, PIN_TYPE_STACK);
+			sgen_conservatively_pin_objects_from (info->client_info.stack_start, info->client_info.stack_end, start_nursery, end_nursery, PIN_TYPE_STACK);
 		}
 
 		if (!precise) {
@@ -2045,6 +2064,26 @@ sgen_client_scan_thread_data (void *start_nursery, void *end_nursery, gboolean p
 #endif
 		}
 	} END_FOREACH_THREAD
+}
+
+/*
+ * mono_gc_set_stack_end:
+ *
+ *   Set the end of the current threads stack to STACK_END. The stack space between 
+ * STACK_END and the real end of the threads stack will not be scanned during collections.
+ */
+void
+mono_gc_set_stack_end (void *stack_end)
+{
+	SgenThreadInfo *info;
+
+	LOCK_GC;
+	info = mono_thread_info_current ();
+	if (info) {
+		SGEN_ASSERT (0, stack_end < info->client_info.stack_end, "Can only lower stack end");
+		info->client_info.stack_end = stack_end;
+	}
+	UNLOCK_GC;
 }
 
 /*

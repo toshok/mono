@@ -386,9 +386,6 @@ void sgen_init_internal_allocator (void) MONO_INTERNAL;
 struct _SgenThreadInfo {
 	SgenClientThreadInfo client_info;
 
-	void *stack_end;
-	void *stack_start;
-	void *stack_start_limit;
 	char **tlab_next_addr;
 	char **tlab_start_addr;
 	char **tlab_temp_end_addr;
@@ -966,7 +963,6 @@ extern MonoNativeTlsKey thread_info_key;
 
 #ifdef HAVE_KW_THREAD
 extern __thread SgenThreadInfo *sgen_thread_info;
-extern __thread char *stack_end;
 #endif
 
 /* Other globals */
