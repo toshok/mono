@@ -208,10 +208,6 @@
 
 #include <mono/utils/memcheck.h>
 
-#if defined(__MACH__)
-#include "utils/mach-support.h"
-#endif
-
 #define OPDEF(a,b,c,d,e,f,g,h,i,j) \
 	a = i,
 
