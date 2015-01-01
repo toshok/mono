@@ -65,12 +65,12 @@ update_current_thread_stack (void *start)
 	g_assert (info->client_info.stack_start >= info->client_info.stack_start_limit && info->client_info.stack_start < info->client_info.stack_end);
 #ifdef USE_MONO_CTX
 	MONO_CONTEXT_GET_CURRENT (cur_thread_ctx);
-	memcpy (&info->ctx, &cur_thread_ctx, sizeof (MonoContext));
+	memcpy (&info->client_info.ctx, &cur_thread_ctx, sizeof (MonoContext));
 	if (mono_gc_get_gc_callbacks ()->thread_suspend_func)
-		mono_gc_get_gc_callbacks ()->thread_suspend_func (info->runtime_data, NULL, &info->ctx);
+		mono_gc_get_gc_callbacks ()->thread_suspend_func (info->runtime_data, NULL, &info->client_info.ctx);
 #else
 	ARCH_STORE_REGS (reg_ptr);
-	memcpy (&info->regs, reg_ptr, sizeof (info->regs));
+	memcpy (&info->client_info.regs, reg_ptr, sizeof (info->client_info.regs));
 	if (mono_gc_get_gc_callbacks ()->thread_suspend_func)
 		mono_gc_get_gc_callbacks ()->thread_suspend_func (info->runtime_data, NULL, NULL);
 #endif
@@ -246,9 +246,9 @@ sgen_client_restart_world (int generation, GGTimingInfo *timing)
 	FOREACH_THREAD (info) {
 		info->client_info.stack_start = NULL;
 #ifdef USE_MONO_CTX
-		memset (&info->ctx, 0, sizeof (MonoContext));
+		memset (&info->client_info.ctx, 0, sizeof (MonoContext));
 #else
-		memset (&info->regs, 0, sizeof (info->regs));
+		memset (&info->client_info.regs, 0, sizeof (info->client_info.regs));
 #endif
 	} END_FOREACH_THREAD
 
