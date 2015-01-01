@@ -22,7 +22,6 @@
 #ifdef HAVE_SGEN_GC
 
 #include "metadata/sgen-gc.h"
-#include "utils/mono-mmap.h"
 #include "utils/lock-free-alloc.h"
 #include "metadata/sgen-memory-governor.h"
 #include "metadata/sgen-client.h"
@@ -61,7 +60,7 @@ block_size (size_t slot_size)
 	int size;
 
 	if (pagesize == -1)
-		pagesize = mono_pagesize ();
+		pagesize = sgen_client_page_size ();
 
 	for (size = pagesize; size < LOCK_FREE_ALLOC_SB_MAX_SIZE; size <<= 1) {
 		if (slot_size * 2 <= LOCK_FREE_ALLOC_SB_USABLE_SIZE (size))
@@ -270,7 +269,7 @@ sgen_init_internal_allocator (void)
 		mono_lock_free_allocator_init_allocator (&allocators [i], &size_classes [i]);
 	}
 
-	for (size = mono_pagesize (); size <= LOCK_FREE_ALLOC_SB_MAX_SIZE; size <<= 1) {
+	for (size = sgen_client_page_size (); size <= LOCK_FREE_ALLOC_SB_MAX_SIZE; size <<= 1) {
 		int max_size = LOCK_FREE_ALLOC_SB_USABLE_SIZE (size) / 2;
 		/*
 		 * we assert that allocator_sizes contains the biggest possible object size

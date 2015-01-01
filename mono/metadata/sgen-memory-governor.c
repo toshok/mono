@@ -32,8 +32,6 @@
 #include "metadata/mono-gc.h"
 #include "metadata/sgen-client.h"
 
-#include "utils/mono-mmap.h"
-
 #define MIN_MINOR_COLLECTION_ALLOWANCE	((mword)(DEFAULT_NURSERY_SIZE * default_allowance_nursery_size_ratio))
 
 /*Heap limits and allocation knobs*/
@@ -222,13 +220,6 @@ This tracks the total usage of memory by the GC. This includes
 managed and unmanaged memory.
 */
 
-static unsigned long
-prot_flags_for_activate (int activate)
-{
-	unsigned long prot_flags = activate? MONO_MMAP_READ|MONO_MMAP_WRITE: MONO_MMAP_NONE;
-	return prot_flags | MONO_MMAP_PRIVATE | MONO_MMAP_ANON;
-}
-
 void
 sgen_assert_memory_alloc (void *ptr, size_t requested_size, const char *assert_description)
 {
@@ -249,7 +240,7 @@ sgen_alloc_os_memory (size_t size, SgenAllocFlags flags, const char *assert_desc
 
 	g_assert (!(flags & ~(SGEN_ALLOC_HEAP | SGEN_ALLOC_ACTIVATE)));
 
-	ptr = mono_valloc (0, size, prot_flags_for_activate (flags & SGEN_ALLOC_ACTIVATE));
+	ptr = sgen_client_valloc (size, !!(flags & SGEN_ALLOC_ACTIVATE));
 	sgen_assert_memory_alloc (ptr, size, assert_description);
 	if (ptr) {
 		SGEN_ATOMIC_ADD_P (total_alloc, size);
@@ -266,7 +257,7 @@ sgen_alloc_os_memory_aligned (size_t size, mword alignment, SgenAllocFlags flags
 
 	g_assert (!(flags & ~(SGEN_ALLOC_HEAP | SGEN_ALLOC_ACTIVATE)));
 
-	ptr = mono_valloc_aligned (size, alignment, prot_flags_for_activate (flags & SGEN_ALLOC_ACTIVATE));
+	ptr = sgen_client_valloc_aligned (size, alignment, !!(flags & SGEN_ALLOC_ACTIVATE));
 	sgen_assert_memory_alloc (ptr, size, assert_description);
 	if (ptr) {
 		SGEN_ATOMIC_ADD_P (total_alloc, size);
@@ -283,7 +274,7 @@ sgen_free_os_memory (void *addr, size_t size, SgenAllocFlags flags)
 {
 	g_assert (!(flags & ~SGEN_ALLOC_HEAP));
 
-	mono_vfree (addr, size);
+	sgen_client_vfree (addr, size);
 	SGEN_ATOMIC_ADD_P (total_alloc, -(gssize)size);
 	total_alloc_max = MAX (total_alloc_max, total_alloc);
 }

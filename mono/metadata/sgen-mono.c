@@ -35,6 +35,7 @@
 #include "utils/mono-memory-model.h"
 #include "utils/mono-counters.h"
 #include "utils/mono-logger-internal.h"
+#include "utils/mono-mmap.h"
 
 /* If set, mark stacks conservatively, even if precise marking is possible */
 static gboolean conservative_stack_mark = FALSE;
@@ -1949,6 +1950,41 @@ mono_gc_walk_heap (int flags, MonoGCReferences callback, void *data)
 	sgen_los_iterate_objects (walk_references, &hwi);
 
 	return 0;
+}
+
+/*
+ * Virtual memory
+ */
+
+size_t
+sgen_client_page_size (void)
+{
+	return mono_pagesize ();
+}
+
+static unsigned long
+prot_flags_for_activate (gboolean activate)
+{
+	unsigned long prot_flags = activate? MONO_MMAP_READ|MONO_MMAP_WRITE: MONO_MMAP_NONE;
+	return prot_flags | MONO_MMAP_PRIVATE | MONO_MMAP_ANON;
+}
+
+void*
+sgen_client_valloc (size_t size, gboolean activate)
+{
+	return mono_valloc (0, size, prot_flags_for_activate (activate));
+}
+
+void*
+sgen_client_valloc_aligned (size_t size, size_t alignment, gboolean activate)
+{
+	return mono_valloc_aligned (size, alignment, prot_flags_for_activate (activate));
+}
+
+void
+sgen_client_vfree (void *addr, size_t size)
+{
+	mono_vfree (addr, size);
 }
 
 /*

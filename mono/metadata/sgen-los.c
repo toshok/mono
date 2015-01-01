@@ -38,7 +38,6 @@
 #include "metadata/sgen-cardtable.h"
 #include "metadata/sgen-memory-governor.h"
 #include "metadata/sgen-client.h"
-#include "utils/mono-mmap.h"
 
 #define LOS_SECTION_SIZE	(1024 * 1024)
 
@@ -304,7 +303,7 @@ sgen_los_free_object (LOSObject *obj)
 #else
 	if (size > LOS_SECTION_OBJECT_LIMIT) {
 		if (!pagesize)
-			pagesize = mono_pagesize ();
+			pagesize = sgen_client_page_size ();
 		size += sizeof (LOSObject);
 		size += pagesize - 1;
 		size &= ~(pagesize - 1);
@@ -336,13 +335,13 @@ sgen_los_alloc_large_inner (GCVTable *vtable, size_t size)
 	g_assert ((size & 1) == 0);
 
 	/*
-	 * size + sizeof (LOSObject) <= SSIZE_MAX - (mono_pagesize () - 1)
+	 * size + sizeof (LOSObject) <= SSIZE_MAX - (sgen_client_page_size () - 1)
 	 *
 	 * therefore:
 	 *
-	 * size <= SSIZE_MAX - (mono_pagesize () - 1) - sizeof (LOSObject)
+	 * size <= SSIZE_MAX - (sgen_client_page_size () - 1) - sizeof (LOSObject)
 	 */
-	if (size > SSIZE_MAX - (mono_pagesize () - 1) - sizeof (LOSObject))
+	if (size > SSIZE_MAX - (sgen_client_page_size () - 1) - sizeof (LOSObject))
 		return NULL;
 
 #ifdef LOS_DUMMY
@@ -363,7 +362,7 @@ sgen_los_alloc_large_inner (GCVTable *vtable, size_t size)
 	if (size > LOS_SECTION_OBJECT_LIMIT) {
 		size_t alloc_size = size;
 		if (!pagesize)
-			pagesize = mono_pagesize ();
+			pagesize = sgen_client_page_size ();
 		alloc_size += sizeof (LOSObject);
 		alloc_size += pagesize - 1;
 		alloc_size &= ~(pagesize - 1);

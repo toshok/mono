@@ -99,6 +99,11 @@ const char* sgen_client_vtable_get_name (GCVTable *vtable);
 
 void sgen_client_pre_collection_checks (void);
 
+size_t sgen_client_page_size (void);
+void* sgen_client_valloc (size_t size, gboolean activate);
+void* sgen_client_valloc_aligned (size_t size, size_t alignment, gboolean activate);
+void sgen_client_vfree (void *addr, size_t size);
+
 void sgen_client_thread_register (SgenThreadInfo* info, void *stack_bottom_fallback);
 void sgen_client_thread_unregister (SgenThreadInfo *p);
 void sgen_client_thread_attach (SgenThreadInfo *info);
