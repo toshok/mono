@@ -825,9 +825,15 @@ void sgen_parallel_pin_or_update (void **ptr, void *obj, GCVTable *vt, SgenGrayQ
 void sgen_set_pinned_from_failed_allocation (mword objsize) MONO_INTERNAL;
 
 void sgen_ensure_free_space (size_t size) MONO_INTERNAL;
+void sgen_gc_collect (int generation) MONO_INTERNAL;
 void sgen_perform_collection (size_t requested_size, int generation_to_collect, const char *reason, gboolean wait_to_finish) MONO_INTERNAL;
 gboolean sgen_has_critical_method (void) MONO_INTERNAL;
 gboolean sgen_is_critical_method (MonoMethod *method) MONO_INTERNAL;
+
+int sgen_gc_collection_count (int generation) MONO_INTERNAL;
+/* FIXME: what exactly does this return? */
+size_t sgen_gc_get_used_size (void) MONO_INTERNAL;
+size_t sgen_gc_get_total_heap_allocation (void) MONO_INTERNAL;
 
 /* STW */
 
@@ -944,6 +950,8 @@ sgen_is_object_alive_for_current_gen (char *object)
 
 	return sgen_major_is_object_alive (object);
 }
+
+int sgen_gc_invoke_finalizers (void) MONO_INTERNAL;
 
 /* TLS Data */
 

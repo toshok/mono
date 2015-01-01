@@ -197,7 +197,6 @@
 #include "metadata/sgen-bridge.h"
 #include "metadata/sgen-memory-governor.h"
 #include "metadata/sgen-hash-table.h"
-#include "metadata/mono-gc.h"
 #include "metadata/sgen-cardtable.h"
 #include "metadata/sgen-pinning.h"
 #include "metadata/sgen-workers.h"
@@ -2630,7 +2629,7 @@ sgen_object_is_live (void *obj)
 static volatile gboolean pending_unqueued_finalizer = FALSE;
 
 int
-mono_gc_invoke_finalizers (void)
+sgen_gc_invoke_finalizers (void)
 {
 	int count = 0;
 
@@ -2665,8 +2664,7 @@ mono_gc_invoke_finalizers (void)
 
 		count++;
 		/* the object is on the stack so it is pinned */
-		//g_print ("Calling finalizer for object: %p (%s)\n", obj, sgen_client_object_safe_name (obj));
-		mono_gc_run_finalize (obj, NULL);
+		sgen_client_run_finalize (obj);
 	}
 
 	if (pending_unqueued_finalizer) {
@@ -3011,7 +3009,7 @@ void mono_gc_wbarrier_value_copy_bitmap (gpointer _dest, gpointer _src, int size
  */
 
 void
-mono_gc_collect (int generation)
+sgen_gc_collect (int generation)
 {
 	LOCK_GC;
 	if (generation > 1)
@@ -3021,15 +3019,15 @@ mono_gc_collect (int generation)
 }
 
 int
-mono_gc_collection_count (int generation)
+sgen_gc_collection_count (int generation)
 {
 	if (generation == 0)
 		return gc_stats.minor_gc_count;
 	return gc_stats.major_gc_count;
 }
 
-int64_t
-mono_gc_get_used_size (void)
+size_t
+sgen_gc_get_used_size (void)
 {
 	gint64 tot = 0;
 	LOCK_GC;

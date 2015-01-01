@@ -29,7 +29,6 @@
 
 #include "metadata/sgen-gc.h"
 #include "metadata/sgen-memory-governor.h"
-#include "metadata/mono-gc.h"
 #include "metadata/sgen-client.h"
 
 #define MIN_MINOR_COLLECTION_ALLOWANCE	((mword)(DEFAULT_NURSERY_SIZE * default_allowance_nursery_size_ratio))
@@ -279,8 +278,8 @@ sgen_free_os_memory (void *addr, size_t size, SgenAllocFlags flags)
 	total_alloc_max = MAX (total_alloc_max, total_alloc);
 }
 
-int64_t
-mono_gc_get_heap_size (void)
+size_t
+sgen_gc_get_total_heap_allocation (void)
 {
 	return total_alloc;
 }
