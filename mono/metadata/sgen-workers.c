@@ -64,8 +64,8 @@ typedef union {
 
 static volatile State workers_state;
 
-static MonoSemType workers_waiting_sem;
-static MonoSemType workers_done_sem;
+static SgenSemaphore workers_waiting_sem;
+static SgenSemaphore workers_done_sem;
 
 static volatile int workers_job_queue_num_entries = 0;
 static volatile JobQueueEntry *workers_job_queue = NULL;
@@ -155,7 +155,7 @@ workers_signal_enqueue_work (int num_wake_up, gboolean from_nursery_collection)
 	SGEN_ASSERT (0, did_set_state, "Nobody else should be mutating the state");
 
 	for (i = 0; i < num_wake_up; ++i)
-		MONO_SEM_POST (&workers_waiting_sem);
+		SGEN_SEMAPHORE_POST (&workers_waiting_sem);
 }
 
 static void
@@ -199,9 +199,9 @@ workers_wait (void)
 	} while (!set_state (old_state, new_state));
 
 	if (post_done)
-		MONO_SEM_POST (&workers_done_sem);
+		SGEN_SEMAPHORE_POST (&workers_done_sem);
 
-	MONO_SEM_WAIT (&workers_waiting_sem);
+	SGEN_SEMAPHORE_WAIT (&workers_waiting_sem);
 
 	do {
 		new_state = old_state = workers_state;
@@ -280,7 +280,7 @@ sgen_workers_signal_start_nursery_collection_and_wait (void)
 	} while (!set_state (old_state, new_state));
 
 	if (new_state.data.post_done)
-		MONO_SEM_WAIT (&workers_done_sem);
+		SGEN_SEMAPHORE_WAIT (&workers_done_sem);
 
 	old_state = workers_state;
 	assert_nursery_collection (old_state, FALSE);
@@ -577,8 +577,8 @@ sgen_workers_init (int num_workers)
 	workers_data = sgen_alloc_internal_dynamic (sizeof (WorkerData) * num_workers, INTERNAL_MEM_WORKER_DATA, TRUE);
 	memset (workers_data, 0, sizeof (WorkerData) * num_workers);
 
-	MONO_SEM_INIT (&workers_waiting_sem, 0);
-	MONO_SEM_INIT (&workers_done_sem, 0);
+	SGEN_SEMAPHORE_INIT (&workers_waiting_sem, 0);
+	SGEN_SEMAPHORE_INIT (&workers_done_sem, 0);
 
 	init_distribute_gray_queue (sgen_get_major_collector ()->is_concurrent);
 
@@ -680,7 +680,7 @@ sgen_workers_join (void)
 			if (!set_state (old_state, new_state))
 				continue;
 
-			MONO_SEM_WAIT (&workers_done_sem);
+			SGEN_SEMAPHORE_WAIT (&workers_done_sem);
 
 			old_state = workers_state;
 		}
