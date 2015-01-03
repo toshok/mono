@@ -34,14 +34,14 @@ typedef struct _SgenThreadInfo SgenThreadInfo;
 #ifdef HAVE_PTHREAD_H
 #include <pthread.h>
 #endif
-#include "utils/mono-compiler.h"
-#include "utils/atomic.h"
-#include "utils/mono-mutex.h"
-#include "metadata/sgen-conf.h"
-#include "metadata/sgen-descriptor.h"
-#include "metadata/sgen-gray.h"
-#include "metadata/sgen-hash-table.h"
-#include "metadata/sgen-protocol.h"
+#include "mono/utils/mono-compiler.h"
+#include "mono/utils/atomic.h"
+#include "mono/utils/mono-mutex.h"
+#include "mono/metadata/sgen-conf.h"
+#include "mono/metadata/sgen-descriptor.h"
+#include "mono/metadata/sgen-gray.h"
+#include "mono/metadata/sgen-hash-table.h"
+#include "mono/metadata/sgen-protocol.h"
 
 /* The method used to clear the nursery */
 /* Clearing at nursery collections is the safest, but has bad interactions with caches.
@@ -300,7 +300,12 @@ enum {
 
 extern SgenHashTable roots_hash [ROOT_TYPE_NUM];
 
+int sgen_register_root (char *start, size_t size, void *descr, int root_type) MONO_INTERNAL;
+void sgen_deregister_root (char* addr) MONO_INTERNAL;
+
 typedef void (*IterateObjectCallbackFunc) (char*, size_t, void*);
+
+void sgen_gc_init (void) MONO_INTERNAL;
 
 void sgen_os_init (void) MONO_INTERNAL;
 
@@ -687,6 +692,8 @@ typedef struct _SgenRemeberedSet {
 
 SgenRemeberedSet *sgen_get_remset (void) MONO_INTERNAL;
 
+void sgen_wbarrier_value_copy_bitmap (gpointer _dest, gpointer _src, int size, unsigned bitmap) MONO_INTERNAL;
+
 static inline mword
 sgen_obj_get_descriptor (char *obj)
 {
@@ -729,7 +736,7 @@ sgen_safe_object_get_size_unaligned (GCObject *obj)
        return sgen_client_slow_object_get_size ((GCVTable*)SGEN_LOAD_VTABLE (obj), obj);
 }
 
-#include "metadata/sgen-client-mono.h"
+#include "sgen-client-mono.h"
 
 gboolean sgen_object_is_live (void *obj) MONO_INTERNAL;
 
@@ -761,8 +768,17 @@ void sgen_null_link_in_range (int generation, gboolean before_finalization, Scan
 void sgen_null_links_for_domain (MonoDomain *domain, int generation) MONO_INTERNAL;
 void sgen_remove_finalizers_for_domain (MonoDomain *domain, int generation) MONO_INTERNAL;
 void sgen_process_fin_stage_entries (void) MONO_INTERNAL;
+gboolean sgen_have_pending_finalizers (void) MONO_INTERNAL;
+void sgen_object_register_for_finalization (GCObject *obj, void *user_data) MONO_INTERNAL;
+
+typedef gboolean (*SgenObjectPredicateFunc) (GCObject *obj, void *user_data);
+
+int sgen_gather_finalizers_with_predicate (SgenObjectPredicateFunc predicate, void *user_data, GCObject **out_array, int out_size) MONO_INTERNAL;
+
 void sgen_process_dislink_stage_entries (void) MONO_INTERNAL;
 void sgen_register_disappearing_link (GCObject *obj, void **link, gboolean track, gboolean in_gc) MONO_INTERNAL;
+
+GCObject* sgen_weak_link_get (void **link_addr) MONO_INTERNAL;
 
 gboolean sgen_drain_gray_stack (int max_objs, ScanCopyContext ctx) MONO_INTERNAL;
 
@@ -800,6 +816,8 @@ typedef struct {
 
 int sgen_stop_world (int generation) MONO_INTERNAL;
 int sgen_restart_world (int generation, GGTimingInfo *timing) MONO_INTERNAL;
+
+gboolean sgen_set_allow_synchronous_major (gboolean flag) MONO_INTERNAL;
 
 /* LOS */
 
@@ -955,6 +973,10 @@ void sgen_set_use_managed_allocator (gboolean flag);
 gboolean sgen_is_managed_allocator (MonoMethod *method);
 gboolean sgen_has_managed_allocator (void);
 
+void* sgen_alloc_obj (GCVTable *vtable, size_t size) MONO_INTERNAL;
+void* sgen_alloc_obj_pinned (MonoVTable *vtable, size_t size) MONO_INTERNAL;
+void* sgen_alloc_obj_mature (GCVTable *vtable) MONO_INTERNAL;
+
 /* Debug support */
 
 void sgen_check_consistency (void);
@@ -998,7 +1020,6 @@ sgen_dummy_use (gpointer v) {
 #define MONO_GC_PARAMS_NAME	"MONO_GC_PARAMS"
 #define MONO_GC_DEBUG_NAME	"MONO_GC_DEBUG"
 
-gboolean sgen_parse_environment_string_extract_number (const char *str, size_t *out) MONO_INTERNAL;
 void sgen_env_var_error (const char *env_var, const char *fallback, const char *description_format, ...) MONO_INTERNAL;
 
 /* Utilities */

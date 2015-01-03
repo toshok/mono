@@ -120,7 +120,9 @@ common_sources = \
 	filewatcher.c		\
 	filewatcher.h		\
 	gc-internal.h		\
+	gc-internal-agnostic.h	\
 	gc-memfuncs.c		\
+	gc-parse.c		\
 	icall.c			\
 	icall-def.h		\
 	image.c			\
@@ -208,6 +210,7 @@ common_sources = \
 gc_dependent_sources = \
 	appdomain.c	\
 	domain.c	\
+	gc-stats.c	\
 	gc.c		\
 	monitor.c	\
 	mono-hash.c	\

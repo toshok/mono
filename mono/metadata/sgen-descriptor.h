@@ -23,7 +23,6 @@
 #ifndef __MONO_SGEN_DESCRIPTOR_H__
 #define __MONO_SGEN_DESCRIPTOR_H__
 
-#include <mono/metadata/gc-internal.h>
 #include <mono/metadata/sgen-conf.h>
 
 
@@ -132,9 +131,14 @@ enum {
 	ROOT_DESC_TYPE_SHIFT = 3,
 };
 
+typedef void (*SgenUserMarkFunc)     (void **addr, void *gc_data);
+typedef void (*SgenUserRootMarkFunc) (void *addr, SgenUserMarkFunc mark_func, void *gc_data);
+
+void* sgen_make_user_root_descriptor (SgenUserRootMarkFunc marker) MONO_INTERNAL;
+
 gsize* sgen_get_complex_descriptor (mword desc) MONO_INTERNAL;
 void* sgen_get_complex_descriptor_bitmap (mword desc) MONO_INTERNAL;
-MonoGCRootMarkFunc sgen_get_user_descriptor_func (mword desc) MONO_INTERNAL;
+SgenUserRootMarkFunc sgen_get_user_descriptor_func (mword desc) MONO_INTERNAL;
 
 void sgen_init_descriptors (void) MONO_INTERNAL;
 

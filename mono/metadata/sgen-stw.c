@@ -32,6 +32,7 @@
 #include "metadata/sgen-memory-governor.h"
 #include "metadata/sgen-client.h"
 #include "metadata/sgen-bridge-internal.h"
+#include "metadata/gc-internal.h"
 
 #define TV_DECLARE SGEN_TV_DECLARE
 #define TV_GETTIME SGEN_TV_GETTIME

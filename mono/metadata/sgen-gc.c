@@ -187,17 +187,18 @@
 #include <errno.h>
 #include <assert.h>
 
-#include "metadata/sgen-gc.h"
-#include "metadata/sgen-cardtable.h"
-#include "metadata/sgen-protocol.h"
-#include "metadata/sgen-memory-governor.h"
-#include "metadata/sgen-hash-table.h"
-#include "metadata/sgen-cardtable.h"
-#include "metadata/sgen-pinning.h"
-#include "metadata/sgen-workers.h"
-#include "metadata/sgen-client.h"
-#include "metadata/sgen-pointer-queue.h"
-#include "utils/mono-memory-model.h"
+#include "mono/metadata/sgen-gc.h"
+#include "mono/metadata/sgen-cardtable.h"
+#include "mono/metadata/sgen-protocol.h"
+#include "mono/metadata/sgen-memory-governor.h"
+#include "mono/metadata/sgen-hash-table.h"
+#include "mono/metadata/sgen-cardtable.h"
+#include "mono/metadata/sgen-pinning.h"
+#include "mono/metadata/sgen-workers.h"
+#include "mono/metadata/sgen-client.h"
+#include "mono/metadata/sgen-pointer-queue.h"
+#include "mono/metadata/gc-internal-agnostic.h"
+#include "mono/utils/mono-memory-model.h"
 
 #include <mono/utils/memcheck.h>
 
@@ -1010,7 +1011,7 @@ precisely_scan_objects_from (void** start_root, void** end_root, char* n_start, 
 	}
 	case ROOT_DESC_USER: {
 		SgenUserCopyOrMarkData data = { copy_func, queue };
-		MonoGCRootMarkFunc marker = sgen_get_user_descriptor_func (desc);
+		SgenUserRootMarkFunc marker = sgen_get_user_descriptor_func (desc);
 		marker (start_root, single_arg_user_copy_or_mark, &data);
 		break;
 	}
@@ -1088,18 +1089,6 @@ alloc_nursery (void)
 	nursery_section = section;
 
 	sgen_nursery_allocator_set_nursery_bounds (data, data + sgen_nursery_size);
-}
-
-void*
-mono_gc_get_nursery (int *shift_bits, size_t *size)
-{
-	*size = sgen_nursery_size;
-#ifdef SGEN_ALIGN_NURSERY
-	*shift_bits = DEFAULT_NURSERY_BITS;
-#else
-	*shift_bits = -1;
-#endif
-	return sgen_get_nursery_start ();
 }
 
 static void
@@ -1698,8 +1687,8 @@ collect_nursery (SgenGrayQueue *unpin_queue, gboolean finish_up_concurrent_mark)
 
 	/* prepare the pin queue for the next collection */
 	sgen_finish_pinning ();
-	if (mono_gc_pending_finalizers ())
-		mono_gc_finalize_notify ();
+	if (sgen_have_pending_finalizers ())
+		sgen_client_finalize_notify ();
 	sgen_pin_stats_reset ();
 	/* clear cemented hash */
 	sgen_cement_clear_below_threshold ();
@@ -2198,8 +2187,8 @@ major_finish_collection (const char *reason, size_t old_next_pin_slot, gboolean 
 
 	sgen_debug_dump_heap ("major", gc_stats.major_gc_count - 1, reason);
 
-	if (mono_gc_pending_finalizers ())
-		mono_gc_finalize_notify ();
+	if (sgen_have_pending_finalizers ())
+		sgen_client_finalize_notify ();
 
 	g_assert (sgen_gray_object_queue_is_empty (&gray_queue));
 
@@ -2630,7 +2619,7 @@ sgen_gc_invoke_finalizers (void)
 	g_assert (!pending_unqueued_finalizer);
 
 	/* FIXME: batch to reduce lock contention */
-	while (mono_gc_pending_finalizers ()) {
+	while (sgen_have_pending_finalizers ()) {
 		void *obj;
 		gboolean entry_is_critical;
 
@@ -2670,7 +2659,7 @@ sgen_gc_invoke_finalizers (void)
 }
 
 gboolean
-mono_gc_pending_finalizers (void)
+sgen_have_pending_finalizers (void)
 {
 	return pending_unqueued_finalizer || !sgen_pointer_queue_is_empty (&fin_ready_queue) || !sgen_pointer_queue_is_empty (&critical_fin_queue);
 }
@@ -2684,8 +2673,8 @@ mono_gc_pending_finalizers (void)
 /*
  * We do not coalesce roots.
  */
-static int
-mono_gc_register_root_inner (char *start, size_t size, void *descr, int root_type)
+int
+sgen_register_root (char *start, size_t size, void *descr, int root_type)
 {
 	RootRecord new_root;
 	int i;
@@ -2716,20 +2705,8 @@ mono_gc_register_root_inner (char *start, size_t size, void *descr, int root_typ
 	return TRUE;
 }
 
-int
-mono_gc_register_root (char *start, size_t size, void *descr)
-{
-	return mono_gc_register_root_inner (start, size, descr, descr ? ROOT_TYPE_NORMAL : ROOT_TYPE_PINNED);
-}
-
-int
-mono_gc_register_root_wbarrier (char *start, size_t size, void *descr)
-{
-	return mono_gc_register_root_inner (start, size, descr, ROOT_TYPE_WBARRIER);
-}
-
 void
-mono_gc_deregister_root (char* addr)
+sgen_deregister_root (char* addr)
 {
 	int root_type;
 	RootRecord root;
@@ -2802,43 +2779,6 @@ sgen_thread_attach (SgenThreadInfo *info)
 
 	sgen_client_thread_attach (info);
 }
-
-gboolean
-mono_gc_register_thread (void *baseptr)
-{
-	return mono_thread_info_attach (baseptr) != NULL;
-}
-
-#if USE_PTHREAD_INTERCEPT
-
-
-int
-mono_gc_pthread_create (pthread_t *new_thread, const pthread_attr_t *attr, void *(*start_routine)(void *), void *arg)
-{
-	return pthread_create (new_thread, attr, start_routine, arg);
-}
-
-int
-mono_gc_pthread_join (pthread_t thread, void **retval)
-{
-	return pthread_join (thread, retval);
-}
-
-int
-mono_gc_pthread_detach (pthread_t thread)
-{
-	return pthread_detach (thread);
-}
-
-void
-mono_gc_pthread_exit (void *retval) 
-{
-	mono_thread_info_detach ();
-	pthread_exit (retval);
-	g_assert_not_reached ();
-}
-
-#endif /* USE_PTHREAD_INTERCEPT */
 
 /*
  * ######################################################################
@@ -2979,7 +2919,8 @@ mono_gc_wbarrier_generic_store_atomic (gpointer ptr, MonoObject *value)
 	sgen_dummy_use (value);
 }
 
-void mono_gc_wbarrier_value_copy_bitmap (gpointer _dest, gpointer _src, int size, unsigned bitmap)
+void
+sgen_wbarrier_value_copy_bitmap (gpointer _dest, gpointer _src, int size, unsigned bitmap)
 {
 	GCObject **dest = _dest;
 	GCObject **src = _src;
@@ -3033,26 +2974,8 @@ sgen_gc_get_used_size (void)
 	return tot;
 }
 
-int
-mono_gc_get_los_limit (void)
-{
-	return MAX_SMALL_OBJ_SIZE;
-}
-
-void
-mono_gc_weak_link_add (void **link_addr, MonoObject *obj, gboolean track)
-{
-	sgen_register_disappearing_link (obj, link_addr, track, FALSE);
-}
-
-void
-mono_gc_weak_link_remove (void **link_addr, gboolean track)
-{
-	sgen_register_disappearing_link (NULL, link_addr, track, FALSE);
-}
-
-MonoObject*
-mono_gc_weak_link_get (void **link_addr)
+GCObject*
+sgen_weak_link_get (void **link_addr)
 {
 	void * volatile *link_addr_volatile;
 	void *ptr;
@@ -3094,33 +3017,13 @@ mono_gc_weak_link_get (void **link_addr)
 }
 
 gboolean
-mono_gc_set_allow_synchronous_major (gboolean flag)
+sgen_set_allow_synchronous_major (gboolean flag)
 {
 	if (!major_collector.is_concurrent)
 		return flag;
 
 	allow_synchronous_major = flag;
 	return TRUE;
-}
-
-void*
-mono_gc_invoke_with_gc_lock (MonoGCLockedCallbackFunc func, void *data)
-{
-	void *result;
-	LOCK_INTERRUPTION;
-	result = func (data);
-	UNLOCK_INTERRUPTION;
-	return result;
-}
-
-gboolean
-mono_gc_is_gc_thread (void)
-{
-	gboolean result;
-	LOCK_GC;
-	result = mono_thread_info_current () != NULL;
-	UNLOCK_GC;
-	return result;
 }
 
 void
@@ -3157,7 +3060,7 @@ parse_double_in_interval (const char *env_var, const char *opt_name, const char 
 }
 
 void
-mono_gc_base_init (void)
+sgen_gc_init (void)
 {
 	const char *env;
 	char **opts, **ptr;
@@ -3171,8 +3074,6 @@ mono_gc_base_init (void)
 	double allowance_ratio = 0, save_target = 0;
 	gboolean have_split_nursery = FALSE;
 	gboolean cement_enabled = TRUE;
-
-	sgen_client_init_early ();
 
 	do {
 		result = InterlockedCompareExchange (&gc_initialized, -1, 0);
@@ -3633,12 +3534,6 @@ SgenRemeberedSet*
 sgen_get_remset (void)
 {
 	return &remset;
-}
-
-void
-mono_gc_register_altstack (gpointer stack, gint32 stack_size, gpointer altstack, gint32 altstack_size)
-{
-	// FIXME:
 }
 
 static void

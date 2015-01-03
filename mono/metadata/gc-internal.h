@@ -13,15 +13,8 @@
 #include <glib.h>
 #include <mono/metadata/object-internals.h>
 #include <mono/metadata/threads-types.h>
+#include <mono/metadata/gc-internal-agnostic.h>
 #include <mono/utils/gc_wrapper.h>
-
-typedef struct {
-	guint minor_gc_count;
-	guint major_gc_count;
-	guint64 minor_gc_time;
-	guint64 major_gc_time;
-	guint64 major_gc_time_concurrent;
-} GCStats;
 
 #define mono_domain_finalizers_lock(domain) mono_mutex_lock (&(domain)->finalizable_objects_hash_lock);
 #define mono_domain_finalizers_unlock(domain) mono_mutex_unlock (&(domain)->finalizable_objects_hash_lock);
@@ -70,8 +63,6 @@ typedef struct {
 
 /* useful until we keep track of gc-references in corlib etc. */
 #define IS_GC_REFERENCE(t) (mono_gc_is_moving () ? FALSE : ((t)->type == MONO_TYPE_U && class->image == mono_defaults.corlib))
-
-extern GCStats gc_stats MONO_INTERNAL;
 
 void   mono_object_register_finalizer               (MonoObject  *obj) MONO_INTERNAL;
 void   ves_icall_System_GC_InternalCollect          (int          generation) MONO_INTERNAL;
@@ -132,12 +123,6 @@ gboolean    mono_gc_set_allow_synchronous_major (gboolean flag) MONO_INTERNAL;
 MonoBoolean
 GCHandle_CheckCurrentDomain (guint32 gchandle) MONO_INTERNAL;
 
-/* simple interface for data structures needed in the runtime */
-void* mono_gc_make_descr_from_bitmap (gsize *bitmap, int numbits) MONO_INTERNAL;
-
-/* Return a root descriptor for a root with all refs */
-void* mono_gc_make_root_descr_all_refs (int numbits) MONO_INTERNAL;
-
 /* User defined marking function */
 /* It should work like this:
  * foreach (ref in GC references in the are structure pointed to by ADDR)
@@ -179,8 +164,6 @@ void* mono_gc_alloc_vector (MonoVTable *vtable, size_t size, uintptr_t max_lengt
 void* mono_gc_alloc_array (MonoVTable *vtable, size_t size, uintptr_t max_length, uintptr_t bounds_size) MONO_INTERNAL;
 void* mono_gc_alloc_string (MonoVTable *vtable, size_t size, gint32 len) MONO_INTERNAL;
 void* mono_gc_make_descr_for_string (gsize *bitmap, int numbits) MONO_INTERNAL;
-void* mono_gc_make_descr_for_object (gsize *bitmap, int numbits, size_t obj_size) MONO_INTERNAL;
-void* mono_gc_make_descr_for_array (int vector, gsize *elem_bitmap, int numbits, size_t elem_size) MONO_INTERNAL;
 
 void  mono_gc_register_for_finalization (MonoObject *obj, void *user_data) MONO_INTERNAL;
 void  mono_gc_add_memory_pressure (gint64 value) MONO_INTERNAL;
@@ -283,9 +266,6 @@ void mono_gc_conservatively_scan_area (void *start, void *end) MONO_INTERNAL;
 /* Scan OBJ, returning its new address */
 void *mono_gc_scan_object (void *obj, void *gc_data) MONO_INTERNAL;
 
-/* Return the bitmap encoded by a descriptor */
-gsize* mono_gc_get_bitmap_for_descr (void *descr, int *numbits) MONO_INTERNAL;
-
 /* Return the suspend signal number used by the GC to suspend threads,
    or -1 if not applicable. */
 int mono_gc_get_suspend_signal (void) MONO_INTERNAL;
@@ -336,8 +316,6 @@ void mono_gc_register_mach_exception_thread (pthread_t thread) MONO_INTERNAL;
 pthread_t mono_gc_get_mach_exception_thread (void) MONO_INTERNAL;
 #endif
 
-gboolean mono_gc_parse_environment_string_extract_number (const char *str, size_t *out) MONO_INTERNAL;
-
 gboolean mono_gc_precise_stack_mark_enabled (void) MONO_INTERNAL;
 
 FILE *mono_gc_get_logfile (void) MONO_INTERNAL;
@@ -375,15 +353,6 @@ void mono_gc_register_finalizer_callbacks (MonoGCFinalizerCallbacks *callbacks);
 #ifdef HOST_WIN32
 BOOL APIENTRY mono_gc_dllmain (HMODULE module_handle, DWORD reason, LPVOID reserved) MONO_INTERNAL;
 #endif
-
-/*
-Those functions must be used when it's possible that either destination is not
-word aligned or size is not a multiple of word size.
-*/
-void mono_gc_bzero_atomic (void *dest, size_t size) MONO_INTERNAL;
-void mono_gc_bzero_aligned (void *dest, size_t size) MONO_INTERNAL;
-void mono_gc_memmove_atomic (void *dest, const void *src, size_t size) MONO_INTERNAL;
-void mono_gc_memmove_aligned (void *dest, const void *src, size_t size) MONO_INTERNAL;
 
 guint mono_gc_get_vtable_bits (MonoClass *klass) MONO_INTERNAL;
 

@@ -51,7 +51,6 @@ static gboolean debug_print_allowance = FALSE;
 
 
 /* use this to tune when to do a major/minor collection */
-static mword memory_pressure = 0;
 static mword minor_collection_allowance;
 static mword minor_collection_sections_alloced = 0;
 
@@ -199,19 +198,6 @@ sgen_get_minor_collection_allowance (void)
 {
 	return minor_collection_allowance;
 }
-
-/* Memory pressure API */
-
-/* Negative value to remove */
-void
-mono_gc_add_memory_pressure (gint64 value)
-{
-	/* FIXME: Use interlocked functions */
-	LOCK_GC;
-	memory_pressure += value;
-	UNLOCK_GC;
-}
-
 
 /*
 Global GC memory tracking.
