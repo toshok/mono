@@ -69,7 +69,7 @@ SERIAL_SCAN_VTYPE (char *start, mword desc, SgenGrayQueue *queue BINARY_PROTOCOL
 	SGEN_ASSERT (9, sgen_get_current_collection_generation () == GENERATION_NURSERY, "Must not use minor scan during major collection.");
 
 	/* The descriptors include info about the MonoObject header as well */
-	start -= sizeof (MonoObject);
+	start -= SGEN_CLIENT_OBJECT_HEADER_SIZE;
 
 #define SCAN_OBJECT_NOVTABLE
 #define SCAN_OBJECT_PROTOCOL
