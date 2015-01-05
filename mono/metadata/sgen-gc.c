@@ -1518,10 +1518,6 @@ collect_nursery (SgenGrayQueue *unpin_queue, gboolean finish_up_concurrent_mark)
 	if (do_verify_nursery || do_dump_nursery_content)
 		sgen_debug_verify_nursery (do_dump_nursery_content);
 
-#ifndef DISABLE_PERFCOUNTERS
-	mono_perfcounters->gc_collections0++;
-#endif
-
 	current_collection_generation = GENERATION_NURSERY;
 	current_object_ops = sgen_minor_collector.serial_ops;
 
@@ -1994,9 +1990,6 @@ major_start_collection (gboolean concurrent, size_t *old_next_pin_slot)
 	binary_protocol_collection_begin (gc_stats.major_gc_count, GENERATION_OLD);
 
 	current_collection_generation = GENERATION_OLD;
-#ifndef DISABLE_PERFCOUNTERS
-	mono_perfcounters->gc_collections1++;
-#endif
 
 	g_assert (sgen_section_gray_queue_is_empty (sgen_workers_get_distribute_section_gray_queue ()));
 
