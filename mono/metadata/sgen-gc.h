@@ -758,7 +758,7 @@ void sgen_register_test_toggleref_callback (void) MONO_INTERNAL;
 void sgen_mark_bridge_object (GCObject *obj) MONO_INTERNAL;
 void sgen_collect_bridge_objects (int generation, ScanCopyContext ctx) MONO_INTERNAL;
 
-typedef mono_bool (*WeakLinkAlivePredicateFunc) (GCObject*, void*);
+typedef gboolean (*WeakLinkAlivePredicateFunc) (GCObject*, void*);
 
 void sgen_null_links_with_predicate (int generation, WeakLinkAlivePredicateFunc predicate, void *data) MONO_INTERNAL;
 
