@@ -226,7 +226,7 @@ sgen_cement_concurrent_finish (void)
 gboolean
 sgen_cement_lookup (char *obj)
 {
-	guint hv = mono_aligned_addr_hash (obj);
+	guint hv = sgen_aligned_addr_hash (obj);
 	int i = SGEN_CEMENT_HASH (hv);
 
 	SGEN_ASSERT (5, sgen_ptr_in_nursery (obj), "Looking up cementing for non-nursery objects makes no sense");
@@ -261,7 +261,7 @@ sgen_cement_lookup_or_register (char *obj)
 	else
 		hash = cement_hash;
 
-	hv = mono_aligned_addr_hash (obj);
+	hv = sgen_aligned_addr_hash (obj);
 	i = SGEN_CEMENT_HASH (hv);
 
 	SGEN_ASSERT (5, sgen_ptr_in_nursery (obj), "Can only cement pointers to nursery objects");

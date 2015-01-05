@@ -151,6 +151,12 @@ extern int num_ready_finalizers;
 #define ONE_P 1ll
 #endif
 
+static inline guint
+sgen_aligned_addr_hash (gconstpointer ptr)
+{
+	return GPOINTER_TO_UINT (ptr) >> 3;
+}
+
 /*
  * The link pointer is hidden by negating each bit.  We use the lowest
  * bit of the link (before negation) to store whether it needs
