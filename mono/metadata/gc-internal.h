@@ -91,12 +91,6 @@ extern void mono_gc_cleanup (void) MONO_INTERNAL;
  */
 extern gboolean mono_gc_is_gc_thread (void) MONO_INTERNAL;
 
-/*
- * Try to register a foreign thread with the GC, if we fail or the backend
- * can't cope with this concept - we return FALSE.
- */
-extern gboolean mono_gc_register_thread (void *baseptr) MONO_INTERNAL;
-
 extern gboolean mono_gc_is_finalizer_internal_thread (MonoInternalThread *thread) MONO_INTERNAL;
 
 extern void mono_gc_set_stack_end (void *stack_end) MONO_INTERNAL;
