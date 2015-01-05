@@ -334,7 +334,7 @@ try_again:
 			mono_memory_write_barrier ();
 		}
 
-		cur = mono_lls_pointer_unmask (next);
+		cur = unmask (next);
 	}
 	return NULL;
 }
