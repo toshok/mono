@@ -380,7 +380,11 @@ enum {
 void sgen_init_internal_allocator (void) MONO_INTERNAL;
 
 #define SGEN_DEFINE_OBJECT_VTABLE
+#ifdef SGEN_CLIENT_HEADER
+#include SGEN_CLIENT_HEADER
+#else
 #include "sgen-client-mono.h"
+#endif
 #undef SGEN_DEFINE_OBJECT_VTABLE
 
 /* eventually share with MonoThread? */
@@ -744,7 +748,11 @@ sgen_safe_object_get_size_unaligned (GCObject *obj)
        return sgen_client_slow_object_get_size ((GCVTable*)SGEN_LOAD_VTABLE (obj), obj);
 }
 
+#ifdef SGEN_CLIENT_HEADER
+#include SGEN_CLIENT_HEADER
+#else
 #include "sgen-client-mono.h"
+#endif
 
 gboolean sgen_object_is_live (void *obj) MONO_INTERNAL;
 
