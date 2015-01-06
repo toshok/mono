@@ -25,6 +25,8 @@
 #include "metadata/sgen-gc.h"
 #include "metadata/sgen-workers.h"
 #include "metadata/sgen-client.h"
+#include <string.h>
+
 
 static int workers_num;
 static WorkerData *workers_data;
