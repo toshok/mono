@@ -35,8 +35,10 @@
 #include "mono/metadata/sgen-memory-governor.h"
 #include "mono/metadata/sgen-pinning.h"
 #include "mono/metadata/sgen-client.h"
+#ifndef SGEN_WITHOUT_MONO
 #include "mono/metadata/sgen-bridge-internal.h"
 #include "mono/metadata/threadpool-internals.h"
+#endif
 
 #define LOAD_VTABLE	SGEN_LOAD_VTABLE
 
@@ -142,7 +144,10 @@ describe_pointer (char *ptr, gboolean need_setup)
 	printf ("Size: %d\n", (int)size);
 
  bridge:
+	;
+#ifndef SGEN_WITHOUT_MONO
 	sgen_bridge_describe_pointer ((GCObject*)ptr);
+#endif
 }
 
 void
@@ -492,6 +497,9 @@ sgen_check_objref (char *obj)
 static void
 find_pinning_ref_from_thread (char *obj, size_t size)
 {
+#ifdef SGEN_WITHOUT_MONO
+	g_assert_not_reached ();
+#else
 	int j;
 	SgenThreadInfo *info;
 	char *endobj = obj + size;
@@ -517,6 +525,7 @@ find_pinning_ref_from_thread (char *obj, size_t size)
 				fprintf (stderr, "Object %p referenced in saved reg %d of thread %p (id %p)", obj, j, info, (gpointer)mono_thread_info_get_tid (info));
 		} END_FOREACH_THREAD
 	}
+#endif
 }
 
 /*
@@ -840,6 +849,8 @@ mono_gc_scan_for_specific_ref (GCObject *key, gboolean precise)
 	} SGEN_HASH_TABLE_FOREACH_END;
 }
 
+#ifndef SGEN_WITHOUT_MONO
+
 static MonoDomain *check_domain = NULL;
 
 static void
@@ -1030,6 +1041,8 @@ sgen_check_for_xdomain_refs (void)
 		scan_object_for_xdomain_refs (bigobj->data, sgen_los_object_size (bigobj), NULL);
 }
 
+#endif
+
 /* If not null, dump the heap after each collection into this file */
 static FILE *heap_dump_file = NULL;
 
@@ -1091,6 +1104,7 @@ sgen_dump_section (GCMemSection *section, const char *type)
 static void
 dump_object (GCObject *obj, gboolean dump_location)
 {
+#ifndef SGEN_WITHOUT_MONO
 	static char class_name [1024];
 
 	MonoClass *class = mono_object_class (obj);
@@ -1123,6 +1137,7 @@ dump_object (GCObject *obj, gboolean dump_location)
 		fprintf (heap_dump_file, " location=\"%s\"", location);
 	}
 	fprintf (heap_dump_file, "/>\n");
+#endif
 }
 
 void
@@ -1149,7 +1164,9 @@ sgen_debug_dump_heap (const char *type, int num, const char *reason)
 	if (reason)
 		fprintf (heap_dump_file, " reason=\"%s\"", reason);
 	fprintf (heap_dump_file, ">\n");
+#ifndef SGEN_WITHOUT_MONO
 	fprintf (heap_dump_file, "<other-mem-usage type=\"mempools\" size=\"%ld\"/>\n", mono_mempool_get_bytes_allocated ());
+#endif
 	sgen_dump_internal_mem_usage (heap_dump_file);
 	fprintf (heap_dump_file, "<pinned type=\"stack\" bytes=\"%zu\"/>\n", sgen_pin_stats_get_pinned_byte_count (PIN_TYPE_STACK));
 	/* fprintf (heap_dump_file, "<pinned type=\"static-data\" bytes=\"%d\"/>\n", pinned_byte_counts [PIN_TYPE_STATIC_DATA]); */
@@ -1172,6 +1189,8 @@ sgen_debug_dump_heap (const char *type, int num, const char *reason)
 
 	fprintf (heap_dump_file, "</collection>\n");
 }
+
+#ifndef SGEN_WITHOUT_MONO
 
 static int
 compare_xrefs (const void *a_ptr, const void *b_ptr)
@@ -1333,5 +1352,7 @@ sgen_compare_bridge_processor_results (SgenBridgeProcessor *a, SgenBridgeProcess
 
 	return TRUE;
 }
+
+#endif
 
 #endif /*HAVE_SGEN_GC*/

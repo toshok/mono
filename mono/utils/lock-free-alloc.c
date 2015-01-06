@@ -83,12 +83,30 @@
 #include <stdlib.h>
 
 #include <mono/utils/atomic.h>
+#ifdef SGEN_WITHOUT_MONO
+#include <mono/metadata/sgen-gc.h>
+#include <mono/metadata/sgen-client.h>
+#else
 #include <mono/utils/mono-mmap.h>
+#endif
 #include <mono/utils/mono-membar.h>
 #include <mono/utils/hazard-pointer.h>
 #include <mono/utils/lock-free-queue.h>
 
 #include <mono/utils/lock-free-alloc.h>
+
+#ifdef SGEN_WITHOUT_MONO
+#define VALLOC(size)			sgen_client_valloc ((size), TRUE)
+#define VALLOC_ALIGNED(size,alignment)	sgen_client_valloc_aligned ((size), (alignment), TRUE)
+#define VFREE(addr,size)		sgen_client_vfree ((addr), (size))
+#define GET_PAGESIZE()			sgen_client_page_size ()
+#else
+#define VALLOC_PROT_FLAGS		(MONO_MMAP_READ | MONO_MMAP_WRITE | MONO_MMAP_PRIVATE | MONO_MMAP_ANON)
+#define VALLOC(size)			mono_valloc (0, (size), VALLOC_PROT_FLAGS)
+#define VALLOC_ALIGNED(size,alignment)	mono_valloc_aligned ((size), (alignment),VALLOC_PROT_FLAGS)
+#define VFREE(addr,size)		mono_vfree ((addr), (size))
+#define GET_PAGESIZE()			mono_pagesize ()
+#endif
 
 //#define DESC_AVAIL_DUMMY
 
@@ -130,15 +148,6 @@ sb_header_for_addr (gpointer addr, size_t block_size)
 	return (gpointer)(((size_t)addr) & (~(block_size - 1)));
 }
 
-/* Taken from SGen */
-
-static unsigned long
-prot_flags_for_activate (int activate)
-{
-	unsigned long prot_flags = activate? MONO_MMAP_READ|MONO_MMAP_WRITE: MONO_MMAP_NONE;
-	return prot_flags | MONO_MMAP_PRIVATE | MONO_MMAP_ANON;
-}
-
 static gpointer
 alloc_sb (Descriptor *desc)
 {
@@ -147,11 +156,11 @@ alloc_sb (Descriptor *desc)
 	gpointer sb_header;
 
 	if (pagesize == -1)
-		pagesize = mono_pagesize ();
+		pagesize = GET_PAGESIZE ();
 
 	sb_header = desc->block_size == pagesize ?
-		mono_valloc (0, desc->block_size, prot_flags_for_activate (TRUE)) :
-		mono_valloc_aligned (desc->block_size, desc->block_size, prot_flags_for_activate (TRUE));
+		VALLOC (desc->block_size) :
+		VALLOC_ALIGNED (desc->block_size, desc->block_size);
 
 	g_assert (sb_header == sb_header_for_addr (sb_header, desc->block_size));
 
@@ -166,7 +175,7 @@ free_sb (gpointer sb, size_t block_size)
 {
 	gpointer sb_header = sb_header_for_addr (sb, block_size);
 	g_assert ((char*)sb_header + LOCK_FREE_ALLOC_SB_HEADER_SIZE == sb);
-	mono_vfree (sb_header, block_size);
+	VFREE (sb_header, block_size);
 	//g_print ("free sb %p\n", sb_header);
 }
 
@@ -191,7 +200,7 @@ desc_alloc (void)
 			Descriptor *d;
 			int i;
 
-			desc = mono_valloc (0, desc_size * NUM_DESC_BATCH, prot_flags_for_activate (TRUE));
+			desc = VALLOC (desc_size * NUM_DESC_BATCH);
 
 			/* Organize into linked list. */
 			d = desc;
@@ -207,7 +216,7 @@ desc_alloc (void)
 			success = (InterlockedCompareExchangePointer ((gpointer * volatile)&desc_avail, desc->next, NULL) == NULL);
 
 			if (!success)
-				mono_vfree (desc, desc_size * NUM_DESC_BATCH);
+				VFREE (desc, desc_size * NUM_DESC_BATCH);
 		}
 
 		mono_hazard_pointer_clear (hp, 1);
