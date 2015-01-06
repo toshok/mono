@@ -493,7 +493,7 @@ workers_thread_func (void *data_untyped)
 	WorkerData *data = data_untyped;
 	SgenMajorCollector *major = sgen_get_major_collector ();
 
-	mono_thread_info_register_small_id ();
+	sgen_client_thread_register_worker ();
 
 	if (major->init_worker_thread)
 		major->init_worker_thread (data->major_collector_data);
