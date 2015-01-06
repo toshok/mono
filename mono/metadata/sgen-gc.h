@@ -801,8 +801,6 @@ void sgen_set_pinned_from_failed_allocation (mword objsize) MONO_INTERNAL;
 void sgen_ensure_free_space (size_t size) MONO_INTERNAL;
 void sgen_gc_collect (int generation) MONO_INTERNAL;
 void sgen_perform_collection (size_t requested_size, int generation_to_collect, const char *reason, gboolean wait_to_finish) MONO_INTERNAL;
-gboolean sgen_has_critical_method (void) MONO_INTERNAL;
-gboolean sgen_is_critical_method (MonoMethod *method) MONO_INTERNAL;
 
 int sgen_gc_collection_count (int generation) MONO_INTERNAL;
 /* FIXME: what exactly does this return? */
@@ -982,7 +980,6 @@ void sgen_check_whole_heap_stw (void) MONO_INTERNAL;
 void sgen_check_objref (char *obj);
 void sgen_check_heap_marked (gboolean nursery_must_be_pinned) MONO_INTERNAL;
 void sgen_check_nursery_objects_pinned (gboolean pinned) MONO_INTERNAL;
-void sgen_scan_for_registered_roots_in_domain (MonoDomain *domain, int root_type) MONO_INTERNAL;
 void sgen_check_for_xdomain_refs (void) MONO_INTERNAL;
 
 void mono_gc_scan_for_specific_ref (GCObject *key, gboolean precise) MONO_INTERNAL;
