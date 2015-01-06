@@ -502,7 +502,6 @@ mono_sgen_los_describe_pointer (char *ptr)
 	LOSObject *obj;
 
 	for (obj = los_object_list; obj; obj = obj->next) {
-		GCVTable *vtable;
 		const char *los_kind;
 		mword size;
 		gboolean pinned;
@@ -517,8 +516,6 @@ mono_sgen_los_describe_pointer (char *ptr)
 			los_kind = "huge-los-ptr";
 		else
 			los_kind = "los-ptr";
-
-		vtable = (GCVTable*)SGEN_LOAD_VTABLE (obj->data);
 
 		if (obj->data == ptr) {
 			fprintf (stderr, "%s (size %d pin %d)\n", los_kind, (int)size, pinned ? 1 : 0);

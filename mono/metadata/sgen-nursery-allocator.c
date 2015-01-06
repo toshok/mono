@@ -721,7 +721,7 @@ sgen_build_nursery_fragments (GCMemSection *nursery_section, SgenGrayQueue *unpi
 	char *frag_start, *frag_end;
 	size_t frag_size;
 	SgenFragment *frags_ranges;
-	void **pin_start, **pin_entry, **pin_end;
+	void **pin_entry, **pin_end;
 
 #ifdef NALLOC_DEBUG
 	reset_alloc_records ();
@@ -738,13 +738,12 @@ sgen_build_nursery_fragments (GCMemSection *nursery_section, SgenGrayQueue *unpi
 	/* clear scan starts */
 	memset (nursery_section->scan_starts, 0, nursery_section->num_scan_start * sizeof (gpointer));
 
-	pin_start = pin_entry = sgen_pinning_get_entry (nursery_section->pin_queue_first_entry);
+	pin_entry = sgen_pinning_get_entry (nursery_section->pin_queue_first_entry);
 	pin_end = sgen_pinning_get_entry (nursery_section->pin_queue_last_entry);
 
 	while (pin_entry < pin_end || frags_ranges) {
 		char *addr0, *addr1;
 		size_t size;
-		SgenFragment *last_frag = NULL;
 
 		addr0 = addr1 = sgen_nursery_end;
 		if (pin_entry < pin_end)
@@ -765,7 +764,6 @@ sgen_build_nursery_fragments (GCMemSection *nursery_section, SgenGrayQueue *unpi
 		} else {
 			frag_end = addr1;
 			size = frags_ranges->fragment_next - addr1;
-			last_frag = frags_ranges;
 			frags_ranges = frags_ranges->next_in_order;
 		}
 

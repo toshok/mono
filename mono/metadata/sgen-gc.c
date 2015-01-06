@@ -2598,19 +2598,15 @@ sgen_gc_invoke_finalizers (void)
 	/* FIXME: batch to reduce lock contention */
 	while (sgen_have_pending_finalizers ()) {
 		void *obj;
-		gboolean entry_is_critical;
 
 		LOCK_GC;
 
-		if (!sgen_pointer_queue_is_empty (&fin_ready_queue)) {
+		if (!sgen_pointer_queue_is_empty (&fin_ready_queue))
 			obj = sgen_pointer_queue_pop (&fin_ready_queue);
-			entry_is_critical = FALSE;
-		} else if (!sgen_pointer_queue_is_empty (&critical_fin_queue)) {
+		else if (!sgen_pointer_queue_is_empty (&critical_fin_queue))
 			obj = sgen_pointer_queue_pop (&critical_fin_queue);
-			entry_is_critical = TRUE;
-		} else {
+		else
 			obj = NULL;
-		}
 
 		if (obj) {
 			pending_unqueued_finalizer = TRUE;
@@ -3038,7 +3034,6 @@ sgen_gc_init (void)
 	int dummy;
 	gboolean debug_print_allowance = FALSE;
 	double allowance_ratio = 0, save_target = 0;
-	gboolean have_split_nursery = FALSE;
 	gboolean cement_enabled = TRUE;
 
 	do {
@@ -3105,7 +3100,6 @@ sgen_gc_init (void)
 			sgen_simple_nursery_init (&sgen_minor_collector);
 		} else if (!strcmp (minor_collector_opt, "split")) {
 			sgen_split_nursery_init (&sgen_minor_collector);
-			have_split_nursery = TRUE;
 		} else {
 			sgen_env_var_error (MONO_GC_PARAMS_NAME, "Using `simple` instead.", "Unknown minor collector `%s'.", minor_collector_opt);
 			goto use_simple_nursery;
