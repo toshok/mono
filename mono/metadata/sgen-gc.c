@@ -202,16 +202,6 @@
 
 #include <mono/utils/memcheck.h>
 
-#define OPDEF(a,b,c,d,e,f,g,h,i,j) \
-	a = i,
-
-enum {
-#include "mono/cil/opcode.def"
-	CEE_LAST
-};
-
-#undef OPDEF
-
 #undef pthread_create
 #undef pthread_join
 #undef pthread_detach
@@ -419,15 +409,6 @@ static mword objects_pinned;
  * ########  Macros and function declarations.
  * ######################################################################
  */
-
-inline static void*
-align_pointer (void *ptr)
-{
-	mword p = (mword)ptr;
-	p += sizeof (gpointer) - 1;
-	p &= ~ (sizeof (gpointer) - 1);
-	return (void*)p;
-}
 
 typedef SgenGrayQueue GrayQueue;
 
