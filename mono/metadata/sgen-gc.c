@@ -2467,7 +2467,7 @@ sgen_perform_collection (size_t requested_size, int generation_to_collect, const
 		infos [1].generation = overflow_generation_to_collect;
 		infos [1].reason = overflow_reason;
 		infos [1].is_overflow = TRUE;
-		infos [1].total_time = gc_end;
+		gc_start = gc_end;
 
 		if (overflow_generation_to_collect == GENERATION_NURSERY)
 			collect_nursery (NULL, FALSE);
@@ -2475,7 +2475,7 @@ sgen_perform_collection (size_t requested_size, int generation_to_collect, const
 			major_do_collection (overflow_reason);
 
 		TV_GETTIME (gc_end);
-		infos [1].total_time = SGEN_TV_ELAPSED (infos [1].total_time, gc_end);
+		infos [1].total_time = SGEN_TV_ELAPSED (gc_start, gc_end);
 
 		oldest_generation_collected = MAX (oldest_generation_collected, overflow_generation_to_collect);
 	}
