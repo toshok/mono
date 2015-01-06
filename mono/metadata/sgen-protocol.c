@@ -27,6 +27,7 @@
 #include "sgen-protocol.h"
 #include "sgen-memory-governor.h"
 #include "sgen-client.h"
+#include "mono/utils/mono-membar.h"
 
 #include <errno.h>
 #include <string.h>

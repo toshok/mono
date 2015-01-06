@@ -200,6 +200,7 @@
 #include "mono/metadata/sgen-pointer-queue.h"
 #include "mono/metadata/gc-internal-agnostic.h"
 #include "mono/utils/mono-memory-model.h"
+#include "mono/utils/hazard-pointer.h"
 
 #include <mono/utils/memcheck.h>
 

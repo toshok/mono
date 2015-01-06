@@ -27,11 +27,11 @@
 #include "config.h"
 #ifdef HAVE_SGEN_GC
 
-#include "metadata/sgen-gc.h"
-#include "metadata/sgen-memory-governor.h"
-#include "metadata/sgen-client.h"
 #include <stdlib.h>
 
+#include "mono/metadata/sgen-gc.h"
+#include "mono/metadata/sgen-memory-governor.h"
+#include "mono/metadata/sgen-client.h"
 
 #define MIN_MINOR_COLLECTION_ALLOWANCE	((mword)(DEFAULT_NURSERY_SIZE * default_allowance_nursery_size_ratio))
 
