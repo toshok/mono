@@ -771,8 +771,7 @@ const char* sgen_generation_name (int generation) MONO_INTERNAL;
 
 void sgen_finalize_in_range (int generation, ScanCopyContext ctx) MONO_INTERNAL;
 void sgen_null_link_in_range (int generation, gboolean before_finalization, ScanCopyContext ctx) MONO_INTERNAL;
-void sgen_null_links_for_domain (MonoDomain *domain, int generation) MONO_INTERNAL;
-void sgen_remove_finalizers_for_domain (MonoDomain *domain, int generation) MONO_INTERNAL;
+void sgen_null_links_with_null_vtable (int generation) MONO_INTERNAL;
 void sgen_process_fin_stage_entries (void) MONO_INTERNAL;
 gboolean sgen_have_pending_finalizers (void) MONO_INTERNAL;
 void sgen_object_register_for_finalization (GCObject *obj, void *user_data) MONO_INTERNAL;
@@ -780,6 +779,7 @@ void sgen_object_register_for_finalization (GCObject *obj, void *user_data) MONO
 typedef gboolean (*SgenObjectPredicateFunc) (GCObject *obj, void *user_data);
 
 int sgen_gather_finalizers_with_predicate (SgenObjectPredicateFunc predicate, void *user_data, GCObject **out_array, int out_size) MONO_INTERNAL;
+void sgen_remove_finalizers_with_predicate (SgenObjectPredicateFunc predicate, void *user_data, int generation) MONO_INTERNAL;
 
 void sgen_process_dislink_stage_entries (void) MONO_INTERNAL;
 void sgen_register_disappearing_link (GCObject *obj, void **link, gboolean track, gboolean in_gc) MONO_INTERNAL;

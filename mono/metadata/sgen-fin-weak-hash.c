@@ -723,7 +723,7 @@ sgen_null_link_in_range (int generation, gboolean before_finalization, ScanCopyC
 /* LOCKING: requires that the GC lock is held */
 /* FIXME: Rename and remove domain argument. */
 void
-sgen_null_links_for_domain (MonoDomain *domain, int generation)
+sgen_null_links_with_null_vtable (int generation)
 {
 	void **link;
 	gpointer dummy;
@@ -775,7 +775,7 @@ sgen_null_links_with_predicate (int generation, WeakLinkAlivePredicateFunc predi
 }
 
 void
-sgen_remove_finalizers_for_domain (MonoDomain *domain, int generation)
+sgen_remove_finalizers_with_predicate (SgenObjectPredicateFunc predicate, void *user_data, int generation)
 {
 	SgenHashTable *hash_table = get_finalize_entry_hash_table (generation);
 	GCObject *object;
@@ -784,7 +784,7 @@ sgen_remove_finalizers_for_domain (MonoDomain *domain, int generation)
 	SGEN_HASH_TABLE_FOREACH (hash_table, object, dummy) {
 		object = tagged_object_get_object (object);
 
-		if (mono_object_domain (object) == domain) {
+		if (predicate (object, user_data)) {
 			SGEN_HASH_TABLE_FOREACH_REMOVE (TRUE);
 			continue;
 		}
