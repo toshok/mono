@@ -2698,8 +2698,6 @@ sgen_deregister_root (char* addr)
  * ######################################################################
  */
 
-unsigned int sgen_global_stop_count = 0;
-
 int
 sgen_get_current_collection_generation (void)
 {

@@ -38,6 +38,8 @@
 #define TV_GETTIME SGEN_TV_GETTIME
 #define TV_ELAPSED SGEN_TV_ELAPSED
 
+unsigned int sgen_global_stop_count = 0;
+
 inline static void*
 align_pointer (void *ptr)
 {
