@@ -533,14 +533,29 @@ sgen_clear_tlabs (void)
 	} END_FOREACH_THREAD
 }
 
-#ifdef HEAVY_STATISTICS
 void
-sgen_alloc_init_heavy_stats (void)
+sgen_init_allocator (void)
 {
+#if defined(HAVE_KW_THREAD) && !defined(SGEN_WITHOUT_MONO)
+	int tlab_next_addr_offset = -1;
+	int tlab_temp_end_offset = -1;
+
+
+	MONO_THREAD_VAR_OFFSET (tlab_next_addr, tlab_next_addr_offset);
+	MONO_THREAD_VAR_OFFSET (tlab_temp_end, tlab_temp_end_offset);
+
+	mono_tls_key_set_offset (TLS_KEY_SGEN_TLAB_NEXT_ADDR, tlab_next_addr_offset);
+	mono_tls_key_set_offset (TLS_KEY_SGEN_TLAB_TEMP_END, tlab_temp_end_offset);
+
+	g_assert (tlab_next_addr_offset != -1);
+	g_assert (tlab_temp_end_offset != -1);
+#endif
+
+#ifdef HEAVY_STATISTICS
 	sgen_client_counter_register_uint64 ("# objects allocated", &stat_objects_alloced);
 	sgen_client_counter_register_uint64 ("bytes allocated", &stat_bytes_alloced);
 	sgen_client_counter_register_uint64 ("bytes allocated in LOS", &stat_bytes_alloced_los);
-}
 #endif
+}
 
 #endif /*HAVE_SGEN_GC*/

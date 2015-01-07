@@ -263,13 +263,6 @@ mono_gc_get_write_barrier (void)
 	MonoMethodSignature *sig;
 #ifdef MANAGED_WBARRIER
 	int i, nursery_check_labels [3];
-
-#ifdef HAVE_KW_THREAD
-	int stack_end_offset = -1;
-
-	MONO_THREAD_VAR_OFFSET (stack_end, stack_end_offset);
-	g_assert (stack_end_offset != -1);
-#endif
 #endif
 
 	// FIXME: Maybe create a separate version for ctors (the branch would be
@@ -1007,20 +1000,6 @@ create_allocator (int atype)
 	const char *name = NULL;
 	AllocatorWrapperInfo *info;
 
-#ifdef HAVE_KW_THREAD
-	int tlab_next_addr_offset = -1;
-	int tlab_temp_end_offset = -1;
-
-	MONO_THREAD_VAR_OFFSET (tlab_next_addr, tlab_next_addr_offset);
-	MONO_THREAD_VAR_OFFSET (tlab_temp_end, tlab_temp_end_offset);
-
-	mono_tls_key_set_offset (TLS_KEY_SGEN_TLAB_NEXT_ADDR, tlab_next_addr_offset);
-	mono_tls_key_set_offset (TLS_KEY_SGEN_TLAB_TEMP_END, tlab_temp_end_offset);
-
-	g_assert (tlab_next_addr_offset != -1);
-	g_assert (tlab_temp_end_offset != -1);
-#endif
-
 	if (!registered) {
 		mono_register_jit_icall (mono_gc_alloc_obj, "mono_gc_alloc_obj", mono_create_icall_signature ("object ptr int"), FALSE);
 		mono_register_jit_icall (mono_gc_alloc_vector, "mono_gc_alloc_vector", mono_create_icall_signature ("object ptr int int"), FALSE);
@@ -1330,16 +1309,6 @@ MonoMethod*
 mono_gc_get_managed_allocator (MonoClass *klass, gboolean for_box)
 {
 #ifdef MANAGED_ALLOCATION
-
-#ifdef HAVE_KW_THREAD
-	int tlab_next_offset = -1;
-	int tlab_temp_end_offset = -1;
-	MONO_THREAD_VAR_OFFSET (tlab_next, tlab_next_offset);
-	MONO_THREAD_VAR_OFFSET (tlab_temp_end, tlab_temp_end_offset);
-
-	if (tlab_next_offset == -1 || tlab_temp_end_offset == -1)
-		return NULL;
-#endif
 	if (collect_before_allocs)
 		return NULL;
 	if (!mono_runtime_has_tls_get ())
@@ -1367,16 +1336,6 @@ MonoMethod*
 mono_gc_get_managed_array_allocator (MonoClass *klass)
 {
 #ifdef MANAGED_ALLOCATION
-#ifdef HAVE_KW_THREAD
-	int tlab_next_offset = -1;
-	int tlab_temp_end_offset = -1;
-	MONO_THREAD_VAR_OFFSET (tlab_next, tlab_next_offset);
-	MONO_THREAD_VAR_OFFSET (tlab_temp_end, tlab_temp_end_offset);
-
-	if (tlab_next_offset == -1 || tlab_temp_end_offset == -1)
-		return NULL;
-#endif
-
 	if (klass->rank != 1)
 		return NULL;
 	if (!mono_runtime_has_tls_get ())
