@@ -64,4 +64,17 @@ void mono_gc_bzero_aligned (void *dest, size_t size) MONO_INTERNAL;
 void mono_gc_memmove_atomic (void *dest, const void *src, size_t size) MONO_INTERNAL;
 void mono_gc_memmove_aligned (void *dest, const void *src, size_t size) MONO_INTERNAL;
 
+#ifdef SGEN_WITHOUT_MONO
+#include "mono/metadata/sgen-gc.h"
+/*
+ * These are copied from `object.h` - keep in sync.  The latter is part of the public API,
+ * so we can't just move things away from there.  On the other hand, we need them here or
+ * somewhere else that's not part of the public API, for SGen clients.
+ */
+void mono_gc_wbarrier_arrayref_copy (void* dest_ptr, void* src_ptr, int count);
+void mono_gc_wbarrier_generic_store (void* ptr, GCObject* value);
+void mono_gc_wbarrier_generic_store_atomic (void *ptr, GCObject *value);
+void mono_gc_wbarrier_generic_nostore (void* ptr);
+#endif
+
 #endif
