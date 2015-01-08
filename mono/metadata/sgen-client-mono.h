@@ -498,9 +498,11 @@ gboolean sgen_resume_thread (SgenThreadInfo *info) MONO_INTERNAL;
 void sgen_wait_for_suspend_ack (int count) MONO_INTERNAL;
 
 #ifdef HAVE_KW_THREAD
+extern __thread SgenThreadInfo *sgen_thread_info;
 #define TLAB_ACCESS_INIT
 #define IN_CRITICAL_REGION sgen_thread_info->client_info.in_critical_region
 #else
+extern MonoNativeTlsKey thread_info_key;
 #define TLAB_ACCESS_INIT	SgenThreadInfo *__thread_info__ = mono_native_tls_get_value (thread_info_key)
 #define IN_CRITICAL_REGION (__thread_info__->client_info.in_critical_region)
 #endif
