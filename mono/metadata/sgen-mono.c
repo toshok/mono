@@ -2647,13 +2647,6 @@ sgen_client_pre_collection_checks (void)
 }
 
 const char*
-sgen_client_object_safe_name (GCObject *obj)
-{
-	MonoVTable *vt = (MonoVTable*)SGEN_LOAD_VTABLE (obj);
-	return vt->klass->name;
-}
-
-const char*
 sgen_client_vtable_get_namespace (GCVTable *gc_vtable)
 {
 	MonoVTable *vt = (MonoVTable*)gc_vtable;
