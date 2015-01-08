@@ -1983,6 +1983,29 @@ sgen_client_thread_register (SgenThreadInfo* info, void *stack_bottom_fallback)
 #else
 	memset (&info->client_info.regs, 0, sizeof (info->regs));
 #endif
+
+	if (mono_gc_get_gc_callbacks ()->thread_attach_func)
+		info->client_info.runtime_data = mono_gc_get_gc_callbacks ()->thread_attach_func ();
+
+	binary_protocol_thread_register ((gpointer)mono_thread_info_get_tid (info));
+}
+
+void
+sgen_client_thread_unregister (SgenThreadInfo *p)
+{
+	MonoNativeThreadId tid;
+
+	tid = mono_thread_info_get_tid (p);
+
+	if (p->client_info.info.runtime_thread)
+		mono_threads_add_joinable_thread ((gpointer)tid);
+
+	if (mono_gc_get_gc_callbacks ()->thread_detach_func) {
+		mono_gc_get_gc_callbacks ()->thread_detach_func (p->client_info.runtime_data);
+		p->client_info.runtime_data = NULL;
+	}
+
+	binary_protocol_thread_unregister ((gpointer)tid);
 }
 
 void
@@ -1999,6 +2022,13 @@ static gboolean
 is_critical_method (MonoMethod *method)
 {
 	return mono_runtime_is_critical_method (method) || sgen_is_critical_method (method);
+}
+
+void
+sgen_client_thread_attach (SgenThreadInfo *info)
+{
+	if (mono_gc_get_gc_callbacks ()->thread_attach_func && !info->client_info.runtime_data)
+		info->client_info.runtime_data = mono_gc_get_gc_callbacks ()->thread_attach_func ();
 }
 
 static void
@@ -2051,7 +2081,7 @@ sgen_client_scan_thread_data (void *start_nursery, void *end_nursery, gboolean p
 			continue;
 		if (mono_gc_get_gc_callbacks ()->thread_mark_func && !conservative_stack_mark) {
 			SgenUserCopyOrMarkData data = { NULL, queue };
-			mono_gc_get_gc_callbacks ()->thread_mark_func (info->runtime_data, info->client_info.stack_start, info->client_info.stack_end, precise, &data);
+			mono_gc_get_gc_callbacks ()->thread_mark_func (info->client_info.runtime_data, info->client_info.stack_start, info->client_info.stack_end, precise, &data);
 		} else if (!precise) {
 			if (!conservative_stack_mark) {
 				fprintf (stderr, "Precise stack mark not supported - disabling.\n");
