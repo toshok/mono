@@ -199,7 +199,7 @@ static guint64 time_stop_world;
 static guint64 time_restart_world;
 
 /* LOCKING: assumes the GC lock is held */
-int
+void
 sgen_client_stop_world (int generation)
 {
 	TV_DECLARE (end_handshake);
@@ -223,7 +223,6 @@ sgen_client_stop_world (int generation)
 	dead = restart_threads_until_none_in_managed_allocator ();
 	if (count < dead)
 		g_error ("More threads have died (%d) that been initialy suspended %d", dead, count);
-	count -= dead;
 
 	TV_GETTIME (end_handshake);
 	time_stop_world += TV_ELAPSED (stop_world_time, end_handshake);
@@ -231,15 +230,12 @@ sgen_client_stop_world (int generation)
 	sgen_memgov_collection_start (generation);
 	if (sgen_need_bridge_processing ())
 		sgen_bridge_reset_data ();
-
-	return count;
 }
 
 /* LOCKING: assumes the GC lock is held */
-int
+void
 sgen_client_restart_world (int generation, GGTimingInfo *timing)
 {
-	int count;
 	SgenThreadInfo *info;
 	TV_DECLARE (end_sw);
 	TV_DECLARE (start_handshake);
@@ -256,7 +252,7 @@ sgen_client_restart_world (int generation, GGTimingInfo *timing)
 	} END_FOREACH_THREAD
 
 	TV_GETTIME (start_handshake);
-	count = sgen_thread_handshake (FALSE);
+	sgen_thread_handshake (FALSE);
 	TV_GETTIME (end_sw);
 	time_restart_world += TV_ELAPSED (start_handshake, end_sw);
 	usec = TV_ELAPSED (stop_world_time, end_sw);
@@ -281,8 +277,6 @@ sgen_client_restart_world (int generation, GGTimingInfo *timing)
 		timing [0].stw_time = usec;
 		timing [0].bridge_time = bridge_usec;
 	}
-
-	return count;
 }
 
 void

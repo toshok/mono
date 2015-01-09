@@ -3473,35 +3473,31 @@ count_cards (long long *major_total, long long *major_marked, long long *los_tot
 }
 
 /* LOCKING: assumes the GC lock is held */
-int
+void
 sgen_stop_world (int generation)
 {
-	int count;
 	long long major_total = -1, major_marked = -1, los_total = -1, los_marked = -1;
 
 	binary_protocol_world_stopping (generation, sgen_timestamp ());
 
-	count = sgen_client_stop_world (generation);
+	sgen_client_stop_world (generation);
 
 	if (binary_protocol_is_heavy_enabled ())
 		count_cards (&major_total, &major_marked, &los_total, &los_marked);
 	binary_protocol_world_stopped (generation, sgen_timestamp (), major_total, major_marked, los_total, los_marked);
-
-	return count;
 }
 
 /* LOCKING: assumes the GC lock is held */
-int
+void
 sgen_restart_world (int generation, GGTimingInfo *timing)
 {
-	int count;
 	long long major_total = -1, major_marked = -1, los_total = -1, los_marked = -1;
 
 	if (binary_protocol_is_heavy_enabled ())
 		count_cards (&major_total, &major_marked, &los_total, &los_marked);
 	binary_protocol_world_restarting (generation, sgen_timestamp (), major_total, major_marked, los_total, los_marked);
 
-	count = sgen_client_restart_world (generation, timing);
+	sgen_client_restart_world (generation, timing);
 
 	binary_protocol_world_restarted (generation, sgen_timestamp ());
 
@@ -3511,8 +3507,6 @@ sgen_restart_world (int generation, GGTimingInfo *timing)
 		sgen_client_bridge_processing_finish (generation);
 
 	sgen_memgov_collection_end (generation, timing, timing ? 2 : 0);
-
-	return count;
 }
 
 void
