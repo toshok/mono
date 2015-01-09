@@ -2172,8 +2172,8 @@ is_critical_method (MonoMethod *method)
 	return mono_runtime_is_critical_method (method) || sgen_is_critical_method (method);
 }
 
-void
-sgen_client_thread_attach (SgenThreadInfo *info)
+static void
+sgen_thread_attach (SgenThreadInfo *info)
 {
 	if (mono_gc_get_gc_callbacks ()->thread_attach_func && !info->client_info.runtime_data)
 		info->client_info.runtime_data = mono_gc_get_gc_callbacks ()->thread_attach_func ();

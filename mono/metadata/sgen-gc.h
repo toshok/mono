@@ -888,7 +888,6 @@ void* sgen_try_alloc_obj_nolock (GCVTable *vtable, size_t size) MONO_INTERNAL;
 
 void* sgen_thread_register (SgenThreadInfo* info, void *addr) MONO_INTERNAL;
 void sgen_thread_unregister (SgenThreadInfo *p) MONO_INTERNAL;
-void sgen_thread_attach (SgenThreadInfo *info) MONO_INTERNAL;
 
 /* Finalization/ephemeron support */
 
