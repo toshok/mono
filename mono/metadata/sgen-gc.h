@@ -970,7 +970,7 @@ void sgen_clear_tlabs (void);
 
 void* sgen_alloc_obj (GCVTable *vtable, size_t size) MONO_INTERNAL;
 void* sgen_alloc_obj_pinned (GCVTable *vtable, size_t size) MONO_INTERNAL;
-void* sgen_alloc_obj_mature (GCVTable *vtable) MONO_INTERNAL;
+void* sgen_alloc_obj_mature (GCVTable *vtable, size_t size) MONO_INTERNAL;
 
 /* Debug support */
 
