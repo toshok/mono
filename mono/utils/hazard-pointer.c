@@ -6,16 +6,34 @@
 
 #include <config.h>
 
+#include <string.h>
+
 #include <mono/utils/hazard-pointer.h>
 #include <mono/utils/mono-membar.h>
 #include <mono/utils/mono-memory-model.h>
-#include <mono/utils/mono-mmap.h>
 #include <mono/utils/monobitset.h>
-#include <mono/utils/mono-threads.h>
 #include <mono/utils/lock-free-array-queue.h>
-#include <mono/utils/mono-counters.h>
 #include <mono/utils/atomic.h>
+#include <mono/utils/mono-mutex.h>
+#ifdef SGEN_WITHOUT_MONO
+#include "mono/metadata/sgen-gc.h"
+#include "mono/metadata/sgen-client.h"
+#else
+#include <mono/utils/mono-mmap.h>
+#include <mono/utils/mono-threads.h>
+#include <mono/utils/mono-counters.h>
 #include <mono/io-layer/io-layer.h>
+#endif
+
+#ifdef SGEN_WITHOUT_MONO
+#define VALLOC(size)			sgen_client_valloc ((size), FALSE)
+#define VACTIVATE(addr,size)		sgen_client_mprotect ((addr), (size), TRUE)
+#define GET_PAGESIZE()			sgen_client_page_size ()
+#else
+#define VALLOC(size)			mono_valloc (0, (size), MONO_MMAP_NONE)
+#define VACTIVATE(addr,size)		mono_mprotect ((addr), (size), MONO_MMAP_READ | MONO_MMAP_WRITE)
+#define GET_PAGESIZE()			mono_pagesize ()
+#endif
 
 typedef struct {
 	gpointer p;
@@ -97,19 +115,16 @@ mono_thread_small_id_alloc (void)
 		hazard_table_size = HAZARD_TABLE_MAX_SIZE;
 #else
 		gpointer page_addr;
-		int pagesize = mono_pagesize ();
+		int pagesize = GET_PAGESIZE ();
 		int num_pages = (hazard_table_size * sizeof (MonoThreadHazardPointers) + pagesize - 1) / pagesize;
 
-		if (hazard_table == NULL) {
-			hazard_table = mono_valloc (NULL,
-				sizeof (MonoThreadHazardPointers) * HAZARD_TABLE_MAX_SIZE,
-				MONO_MMAP_NONE);
-		}
+		if (hazard_table == NULL)
+			hazard_table = VALLOC (sizeof (MonoThreadHazardPointers) * HAZARD_TABLE_MAX_SIZE);
 
 		g_assert (hazard_table != NULL);
 		page_addr = (guint8*)hazard_table + num_pages * pagesize;
 
-		mono_mprotect (page_addr, pagesize, MONO_MMAP_READ | MONO_MMAP_WRITE);
+		VACTIVATE (page_addr, pagesize);
 
 		++num_pages;
 		hazard_table_size = num_pages * pagesize / sizeof (MonoThreadHazardPointers);
@@ -346,7 +361,11 @@ mono_thread_smr_init (void)
 	int i;
 
 	mono_mutex_init_recursive(&small_id_mutex);
+#ifdef SGEN_WITHOUT_MONO
+	sgen_client_counter_register_int ("Hazardous pointers", &hazardous_pointer_count);
+#else
 	mono_counters_register ("Hazardous pointers", MONO_COUNTER_JIT | MONO_COUNTER_INT, &hazardous_pointer_count);
+#endif
 
 	for (i = 0; i < HAZARD_TABLE_OVERFLOW; ++i) {
 		int small_id = mono_thread_small_id_alloc ();

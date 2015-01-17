@@ -159,10 +159,11 @@ void sgen_client_pre_collection_checks (void);
 size_t sgen_client_page_size (void);
 
 /*
- * `activate` will always be TRUE.
+ * If `activate` is set, give read and write permissions, otherwise no permissions.
  */
 void* sgen_client_valloc (size_t size, gboolean activate);
 void* sgen_client_valloc_aligned (size_t size, size_t alignment, gboolean activate);
+void sgen_client_mprotect (void *addr, size_t size, gboolean activate);
 void sgen_client_vfree (void *addr, size_t size);
 
 /*
@@ -251,5 +252,11 @@ void sgen_client_protocol_empty (gpointer start, size_t size);
  * Called at initialization to register counters.  No action is necessary.
  */
 void sgen_client_counter_register_time (const char *name, guint64 *value, gboolean monotonic);
+void sgen_client_counter_register_int (const char *name, int *value);
 void sgen_client_counter_register_uint64 (const char *name, guint64 *value);
 void sgen_client_counter_register_byte_count (const char *name, mword *value, gboolean monotonic);
+
+#ifdef SGEN_WITHOUT_MONO
+SgenThreadInfo* mono_thread_info_current (void);
+int mono_thread_info_get_small_id (void);
+#endif

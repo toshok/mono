@@ -16,11 +16,29 @@
  * entry data, and then sets the state to USED or FREE.
  */
 
+#include <string.h>
+
 #include <mono/utils/atomic.h>
 #include <mono/utils/mono-membar.h>
+#ifdef SGEN_WITHOUT_MONO
+#include <mono/metadata/sgen-gc.h>
+#include <mono/metadata/sgen-client.h>
+#else
 #include <mono/utils/mono-mmap.h>
+#endif
 
 #include <mono/utils/lock-free-array-queue.h>
+
+#ifdef SGEN_WITHOUT_MONO
+#define VALLOC(size)			sgen_client_valloc ((size), TRUE)
+#define VFREE(addr,size)		sgen_client_vfree ((addr), (size))
+#define GET_PAGESIZE()			sgen_client_page_size ()
+#else
+#define VALLOC_PROT_FLAGS		(MONO_MMAP_READ | MONO_MMAP_WRITE)
+#define VALLOC(size)			mono_valloc (0, (size), VALLOC_PROT_FLAGS)
+#define VFREE(addr,size)		mono_vfree ((addr), (size))
+#define GET_PAGESIZE()			mono_pagesize ()
+#endif
 
 struct _MonoLockFreeArrayChunk {
 	MonoLockFreeArrayChunk *next;
@@ -35,9 +53,9 @@ typedef MonoLockFreeArrayChunk Chunk;
 static Chunk*
 alloc_chunk (MonoLockFreeArray *arr)
 {
-	int size = mono_pagesize ();
+	int size = GET_PAGESIZE ();
 	int num_entries = (size - (sizeof (Chunk) - arr->entry_size * MONO_ZERO_LEN_ARRAY)) / arr->entry_size;
-	Chunk *chunk = mono_valloc (0, size, MONO_MMAP_READ | MONO_MMAP_WRITE);
+	Chunk *chunk = VALLOC (size);
 	g_assert (chunk);
 	chunk->num_entries = num_entries;
 	return chunk;
@@ -46,7 +64,7 @@ alloc_chunk (MonoLockFreeArray *arr)
 static void
 free_chunk (Chunk *chunk)
 {
-	mono_vfree (chunk, mono_pagesize ());
+	VFREE (chunk, GET_PAGESIZE ());
 }
 
 gpointer
