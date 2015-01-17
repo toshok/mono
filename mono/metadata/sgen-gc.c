@@ -3011,7 +3011,6 @@ sgen_gc_init (void)
 	size_t max_heap = 0;
 	size_t soft_limit = 0;
 	int result;
-	int dummy;
 	gboolean debug_print_allowance = FALSE;
 	double allowance_ratio = 0, save_target = 0;
 	gboolean cement_enabled = TRUE;
@@ -3073,9 +3072,6 @@ sgen_gc_init (void)
 	sgen_register_fixed_internal_mem_type (INTERNAL_MEM_GRAY_QUEUE, sizeof (GrayQueueSection));
 
 	sgen_client_init ();
-
-	/* FIXME: Move this to mono code! */
-	mono_gc_register_thread (&dummy);
 
 	if (!minor_collector_opt) {
 		sgen_simple_nursery_init (&sgen_minor_collector);
