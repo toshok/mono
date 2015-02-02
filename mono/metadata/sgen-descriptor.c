@@ -146,7 +146,7 @@ mono_gc_make_descr_for_object (gsize *bitmap, int numbits, size_t obj_size)
 
 	/* we know the 2-word header is ptr-free */
 	if (last_set < BITMAP_NUM_BITS + OBJECT_HEADER_WORDS && stored_size <= SGEN_MAX_SMALL_OBJ_SIZE) {
-		desc = DESC_TYPE_BITMAP | ((*bitmap >> OBJECT_HEADER_WORDS) << LOW_TYPE_BITS);
+		desc = DESC_TYPE_BITMAP | stored_size | ((*bitmap >> OBJECT_HEADER_WORDS) << LOW_TYPE_BITS);
 		return (void*) desc;
 	}
 
